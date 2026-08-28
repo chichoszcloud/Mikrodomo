@@ -1,0 +1,2424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mikrodomo v1.0.0 - Gerador Failover + Bloqueio MikroTik</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #3b82f6 100%);
+            min-height: 100vh;
+            padding: 20px 10px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(147, 197, 253, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(30, 58, 138, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px 16px 0 0;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        }
+        
+        .logo svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+        
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .brand-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e40af;
+            letter-spacing: -0.02em;
+        }
+        
+        .brand-link {
+            font-size: 11px;
+            color: #3b82f6;
+            font-weight: 500;
+            text-decoration: none;
+            margin-top: 2px;
+            transition: color 0.2s ease;
+        }
+        
+        .brand-link:hover {
+            color: #1e40af;
+            text-decoration: underline;
+        }
+        
+        .brand-subtitle {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 4px;
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 6px;
+            letter-spacing: -0.02em;
+        }
+        
+        .header .subtitle {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .version-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 999px;
+            letter-spacing: 0.03em;
+        }
+
+        .logo-img img {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            object-fit: contain;
+            background: white;
+        }
+
+        .footer-credit {
+            margin-top: 14px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .footer-credit a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer-credit a:hover {
+            text-decoration: underline;
+        }
+
+        .warning-banner {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #f59e0b;
+            border-left: 4px solid #d97706;
+            color: #78350f;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.5;
+            padding: 12px 16px;
+            margin: 0 0 0 0;
+        }
+
+        .warning-inline {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-left: 3px solid #dc2626;
+            color: #991b1b;
+            font-size: 11px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-top: 6px;
+        }
+        
+        .form-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 0 0 16px 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-top: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .section:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .section h3 {
+            color: #1e293b;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
+        }
+        
+        .section-icon {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .form-row.single {
+            grid-template-columns: 1fr;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+            letter-spacing: -0.01em;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            background: white;
+            color: #374151;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        input::placeholder {
+            color: #9ca3af;
+        }
+        
+        .conditional-fields {
+            margin-top: 12px;
+            padding: 12px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(147, 197, 253, 0.05));
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .conditional-fields::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            border-radius: 0 3px 3px 0;
+        }
+        
+        .conditional-fields h4 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+        }
+        
+        .checkbox-group label {
+            margin-bottom: 0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .btn {
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+            padding: 12px 20px;
+            font-size: 13px;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #64748b, #475569);
+            color: white;
+            padding: 12px 16px;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 12px 16px;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            padding: 12px 16px;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        @media (max-width: 640px) {
+            .action-buttons {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            color: #475569;
+            padding: 8px 12px;
+            font-size: 11px;
+            border: 1px solid #e2e8f0;
+            margin-top: 8px;
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 4px 8px;
+            font-size: 10px;
+            float: right;
+        }
+        
+        .result {
+            margin-top: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            display: none;
+        }
+        
+        .result h3 {
+            color: #f1f5f9;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .result textarea {
+            width: 100%;
+            height: 320px;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            font-size: 11px;
+            line-height: 1.5;
+            resize: vertical;
+        }
+        
+        .result textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .copy-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 8px 16px;
+            font-size: 12px;
+            margin-top: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .small-text {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(147, 197, 253, 0.05));
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 6px;
+            font-size: 10px;
+            color: #1e40af;
+            line-height: 1.4;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Animações e efeitos */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .section {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Responsividade */
+        @media (max-width: 640px) {
+            .container {
+                max-width: 95%;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .logo-container {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .brand-text {
+                align-items: center;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .action-buttons {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            
+            .action-buttons .btn-primary {
+                grid-column: 1 / -1;
+            }
+        }
+
+        /* Estilos para interfaces manuais */
+        .error-text {
+            color: #dc2626;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 10px 0;
+            min-height: 20px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .chip button {
+            background: rgba(255,255,255,0.25);
+            border: none;
+            color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 10px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chip button:hover {
+            background: rgba(255,255,255,0.45);
+        }
+
+        .grupo-block {
+            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+            border: 1px solid #fed7aa;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 14px;
+            position: relative;
+        }
+
+        .grupo-block h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #9a3412;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="version-badge">v1.0.0</div>
+            <div class="logo-container">
+                <div class="logo logo-img">
+                    <img src="https://alctechsolutions.netlify.app/logo4.png" alt="Mikrodomo"
+                         onerror="if(this.src.indexOf('netlify')>-1){this.src='https://alctechsolutions.unaux.com/logo4.png';} else {this.parentElement.innerHTML='<svg viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M12 2L2 7V17L12 22L22 17V7L12 2Z\' fill=\'currentColor\' opacity=\'0.9\'/><path d=\'M12 8L8 10V14L12 16L16 14V10L12 8Z\' fill=\'currentColor\'/><circle cx=\'6\' cy=\'9\' r=\'1\' fill=\'currentColor\' opacity=\'0.7\'/><circle cx=\'18\' cy=\'9\' r=\'1\' fill=\'currentColor\' opacity=\'0.7\'/><circle cx=\'6\' cy=\'15\' r=\'1\' fill=\'currentColor\' opacity=\'0.7\'/><circle cx=\'18\' cy=\'15\' r=\'1\' fill=\'currentColor\' opacity=\'0.7\'/></svg>';}">
+                </div>
+                <div class="brand-text">
+                    <div class="brand-name">Mikrodomo</div>
+                    <div class="brand-subtitle">Seu mordomo MikroTik para configurações fáceis</div>
+                </div>
+            </div>
+            <h1>Gerador Failover + Bloqueio MikroTik</h1>
+            <div class="subtitle">Configure failover automático e filtros de bloqueio de forma profissional</div>
+            <div class="footer-credit">
+                Desenvolvido por <a href="mailto:alctechsolutions@proton.me">alctechsolutions@proton.me</a>
+                · <a href="https://github.com/chichoszcloud/Mikrodomo" target="_blank" rel="noopener">github.com/chichoszcloud/Mikrodomo</a>
+            </div>
+        </div>
+
+        <div class="warning-banner">
+            ⚠️ <strong>Esta aplicação não é recomendada para uso de iniciantes.</strong> Ela gera comandos que alteram roteamento, firewall e NAT em produção — você deve ter certeza do que está fazendo antes de aplicar a configuração gerada num MikroTik real.
+        </div>
+        
+        <div class="form-content">
+            <!-- 
+                MIKRODOMO - CHANGELOG
+                v1.0.0 (2026-08-27)
+                - Rebrand para Mikrodomo (antes: Gerador Failover MikroTik / Clube de Rede)
+                - Importação de .rsc com detecção em 2 passos para links WAN (palavra-chave + correlação de rótulo via /ip route)
+                - Campos de interface viram dropdown, populado com interfaces detectadas no .rsc importado
+                - Campo de nome da Bridge LAN (evita duplicar bridge existente, ex: Br_Rede)
+                - Detecção de address-lists/grupos já existentes no arquivo, para evitar duplicação
+                - Campo de DDNS (MikroTik Cloud) ao lado da identificação
+                - QoS (controle de banda) por grupo de bloqueio
+                - Verificação prévia (sanity check) antes de gerar a configuração final
+            -->
+            <!-- Importar RSC -->
+            <div class="section" id="import_section">
+                <h3><div class="section-icon">📥</div> Importar Configuração Existente (.rsc)</h3>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label for="importFile">Arquivo .rsc:</label>
+                        <input type="file" id="importFile" accept=".rsc,.txt">
+                        <div class="small-text">Campos reconhecidos (links WAN, bridge/LAN, grupos de bloqueio, identificação, DDNS) são preenchidos/sugeridos automaticamente. O que não for reconhecido vai para "Outras Configurações", editável, e é preservado ao exportar de novo.</div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="importarRsc()">📥 Importar e Preencher Campos</button>
+                <div id="importStatus" class="info-box hidden"></div>
+                <div id="existingGroupsWarning" class="info-box hidden"></div>
+            </div>
+
+            <form id="configForm">
+                <!-- Identificação -->
+                <div class="section">
+                    <h3><div class="section-icon">🏢</div> Identificação do Sistema</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="identificacao">Nome do Sistema/Cliente:</label>
+                            <input type="text" id="identificacao" placeholder="Ex: EMPRESA-MATRIZ" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ddns_nome">DDNS MikroTik Cloud (opcional):</label>
+                            <input type="text" id="ddns_nome" placeholder="Ex: d4440cc1fac9.sn.mynetname.net">
+                            <div class="small-text" id="ddns_hint">Se detectado no .rsc importado, o nome real (atribuído dinamicamente pela MikroTik Cloud) não fica salvo no arquivo — confirme com <code>/ip cloud print</code> no equipamento.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Link Principal -->
+                <div class="section">
+                    <h3><div class="section-icon">🌐</div> Link Principal</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="interface_principal">Interface:</label>
+                            <select id="interface_principal" onchange="toggleCustomInterface('principal')" required></select>
+                            <input type="text" id="interface_principal_custom" class="hidden" placeholder="Digite a interface manualmente" style="margin-top:6px;">
+                            <div class="small-text">Lista populada automaticamente ao importar um .rsc. Sem importação, escolha "Outro" para digitar.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo_principal">Tipo de Conexão:</label>
+                            <select id="tipo_principal" required>
+                                <option value="">Selecione...</option>
+                                <option value="pppoe">PPPoE</option>
+                                <option value="dhcp">DHCP Client</option>
+                                <option value="static">IP Fixo</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vlan_principal">VLAN ID (opcional):</label>
+                            <input type="number" id="vlan_principal" placeholder="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="ip_monitor_principal">IP Monitoramento:</label>
+                            <input type="text" id="ip_monitor_principal" placeholder="1.1.1.1" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="operadora_principal">Operadora:</label>
+                            <input type="text" id="operadora_principal" placeholder="VIVO, NET, TIM..." required>
+                        </div>
+                    </div>
+                    
+                    <!-- Campos condicionais PPPoE -->
+                    <div id="pppoe_principal_fields" class="conditional-fields hidden">
+                        <h4>⚡ Configurações PPPoE</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="usuario_pppoe_principal">Usuário:</label>
+                                <input type="text" id="usuario_pppoe_principal" placeholder="usuario@provedor.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="senha_pppoe_principal">Senha:</label>
+                                <input type="password" id="senha_pppoe_principal" placeholder="•••••••">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Campos condicionais IP Fixo -->
+                    <div id="static_principal_fields" class="conditional-fields hidden">
+                        <h4>🔧 Configurações IP Fixo</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ip_principal">IP/Máscara:</label>
+                                <input type="text" id="ip_principal" placeholder="192.168.1.10/24">
+                            </div>
+                            <div class="form-group">
+                                <label for="gateway_principal">Gateway:</label>
+                                <input type="text" id="gateway_principal" placeholder="192.168.1.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Link Backup-1 -->
+                <div class="section">
+                    <h3><div class="section-icon">🔄</div> Link Backup-1</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="interface_backup1">Interface:</label>
+                            <select id="interface_backup1" onchange="toggleCustomInterface('backup1')" required></select>
+                            <input type="text" id="interface_backup1_custom" class="hidden" placeholder="Digite a interface manualmente" style="margin-top:6px;">
+                            <div class="small-text">Lista populada automaticamente ao importar um .rsc.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo_backup1">Tipo de Conexão:</label>
+                            <select id="tipo_backup1" required>
+                                <option value="">Selecione...</option>
+                                <option value="pppoe">PPPoE</option>
+                                <option value="dhcp">DHCP Client</option>
+                                <option value="static">IP Fixo</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vlan_backup1">VLAN ID (opcional):</label>
+                            <input type="number" id="vlan_backup1" placeholder="200">
+                        </div>
+                        <div class="form-group">
+                            <label for="ip_monitor_backup1">IP Monitoramento:</label>
+                            <input type="text" id="ip_monitor_backup1" placeholder="8.8.8.8" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="operadora_backup1">Operadora:</label>
+                            <input type="text" id="operadora_backup1" placeholder="CLARO, OI, LOCAL..." required>
+                        </div>
+                    </div>
+                    
+                    <!-- Campos condicionais PPPoE Backup-1 -->
+                    <div id="pppoe_backup1_fields" class="conditional-fields hidden">
+                        <h4>⚡ Configurações PPPoE</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="usuario_pppoe_backup1">Usuário:</label>
+                                <input type="text" id="usuario_pppoe_backup1" placeholder="usuario@provedor.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="senha_pppoe_backup1">Senha:</label>
+                                <input type="password" id="senha_pppoe_backup1" placeholder="•••••••">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Campos condicionais IP Fixo Backup-1 -->
+                    <div id="static_backup1_fields" class="conditional-fields hidden">
+                        <h4>🔧 Configurações IP Fixo</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ip_backup1">IP/Máscara:</label>
+                                <input type="text" id="ip_backup1" placeholder="10.0.0.10/24">
+                            </div>
+                            <div class="form-group">
+                                <label for="gateway_backup1">Gateway:</label>
+                                <input type="text" id="gateway_backup1" placeholder="10.0.0.1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-secondary" id="btnAddBackup2" onclick="adicionarBackup2()">
+                        ➕ Adicionar Backup-2
+                    </button>
+                </div>
+                
+                <!-- Link Backup-2 (Dinâmico) -->
+                <div class="section hidden" id="backup2_section">
+                    <h3>
+                        <div class="section-icon">🔄</div> Link Backup-2
+                        <button type="button" class="btn btn-danger" onclick="removerBackup2()">✖</button>
+                    </h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="interface_backup2">Interface:</label>
+                            <select id="interface_backup2" onchange="toggleCustomInterface('backup2')"></select>
+                            <input type="text" id="interface_backup2_custom" class="hidden" placeholder="Digite a interface manualmente" style="margin-top:6px;">
+                            <div class="small-text">Lista populada automaticamente ao importar um .rsc.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo_backup2">Tipo de Conexão:</label>
+                            <select id="tipo_backup2">
+                                <option value="">Selecione...</option>
+                                <option value="pppoe">PPPoE</option>
+                                <option value="dhcp">DHCP Client</option>
+                                <option value="static">IP Fixo</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vlan_backup2">VLAN ID (opcional):</label>
+                            <input type="number" id="vlan_backup2" placeholder="300">
+                        </div>
+                        <div class="form-group">
+                            <label for="ip_monitor_backup2">IP Monitoramento:</label>
+                            <input type="text" id="ip_monitor_backup2" placeholder="1.0.0.1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="operadora_backup2">Operadora:</label>
+                            <input type="text" id="operadora_backup2" placeholder="NEXTEL, OUTROS...">
+                        </div>
+                    </div>
+                    
+                    <!-- Campos condicionais PPPoE Backup-2 -->
+                    <div id="pppoe_backup2_fields" class="conditional-fields hidden">
+                        <h4>⚡ Configurações PPPoE</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="usuario_pppoe_backup2">Usuário:</label>
+                                <input type="text" id="usuario_pppoe_backup2" placeholder="usuario@provedor.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="senha_pppoe_backup2">Senha:</label>
+                                <input type="password" id="senha_pppoe_backup2" placeholder="•••••••">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Campos condicionais IP Fixo Backup-2 -->
+                    <div id="static_backup2_fields" class="conditional-fields hidden">
+                        <h4>🔧 Configurações IP Fixo</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ip_backup2">IP/Máscara:</label>
+                                <input type="text" id="ip_backup2" placeholder="172.16.0.10/24">
+                            </div>
+                            <div class="form-group">
+                                <label for="gateway_backup2">Gateway:</label>
+                                <input type="text" id="gateway_backup2" placeholder="172.16.0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rede LAN -->
+                <div class="section">
+                    <h3><div class="section-icon">🏠</div> Rede Interna (LAN)</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rede_lan">Rede LAN:</label>
+                            <input type="text" id="rede_lan" placeholder="192.168.1.0/24" value="192.168.10.0/23" required>
+                            <div class="small-text">Gateway e range DHCP calculados automaticamente</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="nome_bridge">Nome da Bridge LAN:</label>
+                            <input type="text" id="nome_bridge" placeholder="LAN" value="LAN" required>
+                            <div class="small-text" id="bridge_hint">Se importar um .rsc com uma bridge já existente (ex: Br_Rede), o nome é preenchido aqui automaticamente — evita criar uma bridge duplicada.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="interfaces_lan">Interfaces LAN (opcional):</label>
+                            <input type="text" id="interfaces_lan" placeholder="ether4 ou ether3,ether4,ether5">
+                            <div class="info-box">
+                                💡 Deixe em branco para configurar manualmente após instalação.
+                                Para múltiplas interfaces, separe por vírgula.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- QoS -->
+                <div class="section">
+                    <h3><div class="section-icon">⚡</div> Controle de Banda (QoS)</h3>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="habilitar_qos">
+                        <label for="habilitar_qos">Configurar controle de banda geral</label>
+                    </div>
+                    
+                    <div id="qos_fields" class="conditional-fields hidden">
+                        <div class="form-group">
+                            <label for="velocidade">Velocidade (Mbps):</label>
+                            <input type="number" id="velocidade" placeholder="100" value="20">
+                            <div class="small-text">Aplicado tanto para upload quanto download</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros de Bloqueio -->
+                <div class="section">
+                    <h3><div class="section-icon">🚫</div> Filtros de Bloqueio de Sites</h3>
+                    <div class="small-text" style="margin-bottom:10px;">As regras abaixo valem para qualquer link ativo no momento (Principal, Backup-1, Backup-2) — o bloqueio não depende de qual WAN está no ar.</div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="bloquear_rede_toda">
+                        <label for="bloquear_rede_toda">Bloquear para a REDE TODA (em vez de grupos específicos)</label>
+                    </div>
+                    <div id="rede_toda_fields" class="conditional-fields hidden">
+                        <h4>🌐 Bloqueio - Rede Toda</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="site_select_rede_toda">Adicionar site/serviço:</label>
+                                <select id="site_select_rede_toda"></select>
+                            </div>
+                            <div class="form-group" style="display:flex; align-items:flex-end;">
+                                <button type="button" class="btn btn-secondary" style="margin-top:0;" onclick="adicionarSite('rede_toda')">➕ Adicionar</button>
+                            </div>
+                        </div>
+                        <div id="sites_rede_toda" class="chips-container"></div>
+                        <div class="form-row" style="margin-top:10px;">
+                            <div class="checkbox-group"><input type="checkbox" id="quic_rede_toda"><label for="quic_rede_toda">Bloquear QUIC (UDP 443)</label></div>
+                            <div class="checkbox-group"><input type="checkbox" id="dot_rede_toda"><label for="dot_rede_toda">Bloquear DoT (853)</label></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="checkbox-group"><input type="checkbox" id="doh_rede_toda"><label for="doh_rede_toda">Bloquear DoH (SNI + IPs conhecidos)</label></div>
+                            <div class="checkbox-group"><input type="checkbox" id="forcedns_rede_toda"><label for="forcedns_rede_toda">Forçar DNS do roteador</label></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="qos_up_rede_toda">Limite Upload (Mbps, opcional):</label>
+                                <input type="number" id="qos_up_rede_toda" placeholder="Ex: 5" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="qos_down_rede_toda">Limite Download (Mbps, opcional):</label>
+                                <input type="number" id="qos_down_rede_toda" placeholder="Ex: 10" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="grupos_container"></div>
+                    <button type="button" class="btn btn-secondary" onclick="adicionarGrupo()">➕ Adicionar Grupo de Bloqueio</button>
+                </div>
+
+                <!-- Outras Configurações -->
+                <div class="section">
+                    <h3><div class="section-icon">🗂️</div> Outras Configurações (importadas / manuais)</h3>
+                    <div class="small-text" style="margin-bottom:8px;">Qualquer trecho do .rsc importado que não tem campo específico no formulário aparece aqui. Você pode editar livremente — esse texto é anexado ao final da configuração exportada.</div>
+                    <textarea id="outrasConfiguracoes" rows="8" placeholder="(vazio até importar um .rsc, ou cole aqui trechos manuais de configuração que devem ser incluídos no export)" style="font-family: 'SF Mono', 'Monaco', monospace; font-size: 11px;"></textarea>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-primary">
+                        🚀 Gerar Configuração MikroTik
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="downloadRsc" disabled onclick="downloadConfig('rsc')">
+                        📄 .RSC
+                    </button>
+                    <button type="button" class="btn btn-success" id="downloadTxt" disabled onclick="downloadConfig('txt')">
+                        📝 .TXT
+                    </button>
+                    <button type="button" class="btn btn-info" id="previewBtn" disabled onclick="togglePreview()">
+                        👁️ Preview
+                    </button>
+                </div>
+            </form>
+            
+            <div class="result" id="result">
+                <h3>📄 Configuração Gerada</h3>
+                <textarea id="configOutput" readonly></textarea>
+                <button class="copy-btn" onclick="copyConfig()">📋 Copiar Configuração</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let backup2Ativado = false;
+
+        // ============================================================
+        // FILTROS DE BLOQUEIO - estado e catálogo de sites
+        // ============================================================
+        let groupIds = [];
+        let existingListNames = [];
+        const DEFAULT_INTERFACE_OPTIONS = ['ether1', 'ether2', 'ether3', 'ether4', 'ether5', 'ether6', 'ether7', 'ether8', 'sfp-sfpplus1', 'wlan1', 'wlan2', 'lte1'];
+        let detectedInterfaces = [];
+        let groupCounter = 0;
+        let groupSites = { rede_toda: [] }; // {targetId: [{id,label,regex}, ...]}
+
+        function buildRegex(keywords) {
+            return `(?i)(^|\\\\.)(${keywords})\\\\.[a-z.]+$`;
+        }
+
+        const SITE_CATALOG = [
+            { id: 'meta', label: 'Facebook + Instagram (Meta)', regex: buildRegex('facebook|instagram|cdninstagram|fbsbx') },
+            { id: 'spotify', label: 'Spotify', regex: buildRegex('spotify|spotifycdn|scdn') },
+            { id: 'youtube', label: 'YouTube', regex: buildRegex('youtube|ytimg|googlevideo|youtu') },
+            { id: 'netflix', label: 'Netflix', regex: buildRegex('netflix|nflxvideo|nflximg') },
+            { id: 'tiktok', label: 'TikTok', regex: buildRegex('tiktok|tiktokcdn|musically') },
+            { id: 'twitter', label: 'Twitter / X', regex: buildRegex('twitter|twimg|x') },
+            { id: 'discord', label: 'Discord', regex: buildRegex('discord|discordapp') },
+            { id: 'twitch', label: 'Twitch', regex: buildRegex('twitch|ttvnw') },
+            { id: 'steam', label: 'Steam', regex: buildRegex('steampowered|steamcommunity|steamcontent') }
+        ];
+
+        const DOH_PROVIDERS = [
+            { ip: '1.1.1.1', label: 'Cloudflare' },
+            { ip: '1.0.0.1', label: 'Cloudflare' },
+            { ip: '8.8.8.8', label: 'Google' },
+            { ip: '8.8.4.4', label: 'Google' },
+            { ip: '9.9.9.9', label: 'Quad9' },
+            { ip: '149.112.112.112', label: 'Quad9' }
+        ];
+
+        const DOH_SNI_REGEX = '(?i)(^|\\\\.)(cloudflare-dns\\\\.com|dns\\\\.google|quad9\\\\.net|nextdns\\\\.io|adguard\\\\.com|mullvad\\\\.net)$';
+
+        function slug(str) {
+            return str.trim().toUpperCase().replace(/[^A-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
+        }
+
+        function splitInterfaceVlan(ifaceStr) {
+            const m = ifaceStr.match(/^(.+)\.(\d+)$/);
+            if (m) return { interface: m[1], vlan: m[2] };
+            return { interface: ifaceStr, vlan: '' };
+        }
+
+        function populateSiteSelect(targetId) {
+            const sel = document.getElementById('site_select_' + targetId);
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Selecione...</option>' +
+                SITE_CATALOG.map(s => `<option value="${s.id}">${s.label}</option>`).join('') +
+                '<option value="custom">➕ Personalizado...</option>';
+        }
+
+        function adicionarSite(targetId) {
+            const sel = document.getElementById('site_select_' + targetId);
+            const val = sel.value;
+            if (!val) return;
+            if (!groupSites[targetId]) groupSites[targetId] = [];
+
+            if (val === 'custom') {
+                const nome = prompt('Nome do site/serviço (ex: Roblox):');
+                if (!nome) return;
+                const dominios = prompt('Domínios-chave separados por vírgula (ex: roblox,rbxcdn):');
+                if (!dominios) return;
+                const keyId = 'custom_' + nome.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Date.now();
+                const keywords = dominios.split(',').map(d => d.trim()).filter(Boolean).join('|');
+                if (!keywords) return;
+                groupSites[targetId].push({ id: keyId, label: nome, regex: buildRegex(keywords) });
+            } else {
+                if (groupSites[targetId].some(s => s.id === val)) { sel.value = ''; return; }
+                const cat = SITE_CATALOG.find(s => s.id === val);
+                if (cat) groupSites[targetId].push({ id: cat.id, label: cat.label, regex: cat.regex });
+            }
+            sel.value = '';
+            renderChips(targetId);
+        }
+
+        function removerSite(targetId, siteId) {
+            groupSites[targetId] = (groupSites[targetId] || []).filter(s => s.id !== siteId);
+            renderChips(targetId);
+        }
+
+        function renderChips(targetId) {
+            const container = document.getElementById('sites_' + targetId);
+            if (!container) return;
+            container.innerHTML = (groupSites[targetId] || []).map(s =>
+                `<span class="chip">${s.label}<button type="button" onclick="removerSite('${targetId}','${s.id}')">✖</button></span>`
+            ).join('');
+        }
+
+        function renderGrupoBlock(id) {
+            const div = document.createElement('div');
+            div.className = 'grupo-block';
+            div.id = 'bloco_' + id;
+            div.innerHTML = `
+                <h4>👥 Grupo <button type="button" class="btn btn-danger" onclick="removerGrupo('${id}')">✖ Remover</button></h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nome_${id}">Nome do Grupo:</label>
+                        <input type="text" id="nome_${id}" placeholder="Ex: Setor Administrativo, Visitantes...">
+                    </div>
+                    <div class="form-group">
+                        <label for="ips_${id}">IPs do Grupo (opcional):</label>
+                        <textarea id="ips_${id}" rows="2" placeholder="192.168.1.50&#10;192.168.1.51&#10;ou 192.168.1.0/24"></textarea>
+                        <div class="small-text">Um IP/faixa por linha ou separado por vírgula. Pode deixar vazio e preencher depois.</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="site_select_${id}">Adicionar site/serviço:</label>
+                        <select id="site_select_${id}"></select>
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:flex-end;">
+                        <button type="button" class="btn btn-secondary" style="margin-top:0;" onclick="adicionarSite('${id}')">➕ Adicionar</button>
+                    </div>
+                </div>
+                <div id="sites_${id}" class="chips-container"></div>
+                <div class="form-row">
+                    <div class="checkbox-group"><input type="checkbox" id="quic_${id}"><label for="quic_${id}">Bloquear QUIC (UDP 443)</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="dot_${id}"><label for="dot_${id}">Bloquear DoT (853)</label></div>
+                </div>
+                <div class="form-row">
+                    <div class="checkbox-group"><input type="checkbox" id="doh_${id}"><label for="doh_${id}">Bloquear DoH (SNI + IPs conhecidos)</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="forcedns_${id}"><label for="forcedns_${id}">Forçar DNS do roteador</label></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="qos_up_${id}">Limite Upload (Mbps, opcional):</label>
+                        <input type="number" id="qos_up_${id}" placeholder="Ex: 5" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="qos_down_${id}">Limite Download (Mbps, opcional):</label>
+                        <input type="number" id="qos_down_${id}" placeholder="Ex: 10" min="0">
+                    </div>
+                </div>
+            `;
+            document.getElementById('grupos_container').appendChild(div);
+            populateSiteSelect(id);
+        }
+
+        function adicionarGrupo() {
+            const id = 'g' + (++groupCounter);
+            groupIds.push(id);
+            groupSites[id] = [];
+            renderGrupoBlock(id);
+            return id;
+        }
+
+        function removerGrupo(id) {
+            const el = document.getElementById('bloco_' + id);
+            if (el) el.remove();
+            groupIds = groupIds.filter(g => g !== id);
+            delete groupSites[id];
+        }
+
+        function coletarGrupos() {
+            return groupIds.map(id => {
+                const nomeEl = document.getElementById('nome_' + id);
+                if (!nomeEl) return null;
+                const nome = nomeEl.value.trim();
+                if (!nome) return null;
+                const ipsRaw = document.getElementById('ips_' + id).value;
+                const ips = ipsRaw.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+                return {
+                    key: slug(nome),
+                    label: nome,
+                    ips,
+                    sites: groupSites[id] || [],
+                    quic: document.getElementById('quic_' + id).checked,
+                    dot: document.getElementById('dot_' + id).checked,
+                    doh: document.getElementById('doh_' + id).checked,
+                    forcedns: document.getElementById('forcedns_' + id).checked,
+                    qosUp: document.getElementById('qos_up_' + id).value,
+                    qosDown: document.getElementById('qos_down_' + id).value
+                };
+            }).filter(Boolean);
+        }
+
+        function coletarRedeToda() {
+            if (!document.getElementById('bloquear_rede_toda').checked) return null;
+            return {
+                key: 'REDETODA',
+                label: 'REDE TODA',
+                isRedeToda: true,
+                sites: groupSites['rede_toda'] || [],
+                quic: document.getElementById('quic_rede_toda').checked,
+                dot: document.getElementById('dot_rede_toda').checked,
+                doh: document.getElementById('doh_rede_toda').checked,
+                forcedns: document.getElementById('forcedns_rede_toda').checked,
+                qosUp: document.getElementById('qos_up_rede_toda').value,
+                qosDown: document.getElementById('qos_down_rede_toda').value
+            };
+        }
+
+        function gerarFiltrosBloqueio(principal, backup1, backup2) {
+            const grupos = coletarGrupos();
+            const redeToda = coletarRedeToda();
+            const targets = [...grupos, ...(redeToda ? [redeToda] : [])];
+            if (targets.length === 0) return '';
+
+            let cfg = '';
+            const precisaForceDns = targets.some(t => t.forcedns);
+            const precisaDoh = targets.some(t => t.doh);
+
+            if (precisaForceDns) {
+                cfg += `
+
+# ===================================================================
+# Seguranca WAN - bloquear DNS vindo de fora (necessario p/ Forcar DNS)
+# ===================================================================
+/ip firewall filter`;
+                [principal, backup1, backup2].filter(Boolean).forEach(link => {
+                    const iface = link.vlan ? `${link.interface}.${link.vlan}` : link.interface;
+                    const label = (link.operadora || 'WAN').toUpperCase();
+                    cfg += `
+add action=drop chain=input protocol=udp in-interface=${iface} dst-port=53 comment="Bloquear DNS vindo da WAN - ${label}"
+add action=drop chain=input protocol=tcp in-interface=${iface} dst-port=53 comment="Bloquear DNS vindo da WAN - ${label}"`;
+                });
+                cfg += `
+/ip dns
+set allow-remote-requests=yes`;
+            }
+
+            if (precisaDoh) {
+                cfg += `
+
+# ===================================================================
+# DoH - providers conhecidos + canario NXDOMAIN
+# ===================================================================
+/ip firewall address-list`;
+                DOH_PROVIDERS.forEach(p => {
+                    cfg += `
+add list=doh_providers address=${p.ip} comment="${p.label}"`;
+                });
+                cfg += `
+/ip dns static
+add name=use-application-dns.net type=NXDOMAIN`;
+            }
+
+            const siteMap = {};
+            targets.forEach(t => t.sites.forEach(s => { siteMap[s.id] = s; }));
+            const siteIds = Object.keys(siteMap);
+            if (siteIds.length > 0 || precisaDoh) {
+                cfg += `
+
+# ===================================================================
+# Layer7 - assinaturas de sites/servicos
+# ===================================================================
+/ip firewall layer7-protocol`;
+                siteIds.forEach(id => {
+                    cfg += `
+add name=${id} regexp="${siteMap[id].regex}"`;
+                });
+                if (precisaDoh) {
+                    cfg += `
+add name=doh_sni regexp="${DOH_SNI_REGEX}"`;
+                }
+            }
+
+            targets.forEach(t => {
+                cfg += `
+
+# ===================================================================
+# Bloqueio: ${t.label}
+# ===================================================================`;
+                const srcClause = t.isRedeToda ? '' : ` src-address-list=${t.key}`;
+
+                if (!t.isRedeToda) {
+                    cfg += `
+/ip firewall address-list`;
+                    if (t.ips.length === 0) {
+                        cfg += `
+# (nenhum IP cadastrado ainda para "${t.label}" - adicione depois com: /ip firewall address-list add list=${t.key} address=IP)`;
+                    } else {
+                        t.ips.forEach(ip => {
+                            cfg += `
+add list=${t.key} address=${ip}`;
+                        });
+                    }
+                }
+
+                if (t.sites.length > 0) {
+                    cfg += `
+/ip firewall mangle`;
+                    t.sites.forEach(s => {
+                        cfg += `
+add action=mark-packet chain=forward${srcClause} layer7-protocol=${s.id} new-packet-mark=block_${t.key}_${s.id} passthrough=yes comment="Marcar ${s.label} - ${t.label}"`;
+                    });
+                    cfg += `
+/ip firewall filter`;
+                    t.sites.forEach(s => {
+                        cfg += `
+add action=drop chain=forward packet-mark=block_${t.key}_${s.id} comment="Drop ${s.label} - ${t.label}"`;
+                    });
+                }
+
+                if (t.quic) {
+                    cfg += `
+/ip firewall filter
+add action=drop chain=forward protocol=udp dst-port=443${srcClause} comment="Bloquear QUIC - ${t.label}"`;
+                }
+
+                if (t.dot) {
+                    cfg += `
+/ip firewall filter
+add action=drop chain=forward protocol=tcp dst-port=853${srcClause} comment="Bloquear DoT - ${t.label}"`;
+                }
+
+                if (t.doh) {
+                    cfg += `
+/ip firewall mangle
+add action=mark-packet chain=forward${srcClause} layer7-protocol=doh_sni new-packet-mark=block_doh_${t.key} passthrough=yes comment="Marcar DoH SNI - ${t.label}"
+/ip firewall filter
+add action=drop chain=forward packet-mark=block_doh_${t.key} comment="Drop DoH por SNI - ${t.label}"
+add action=drop chain=forward${srcClause} dst-address-list=doh_providers protocol=tcp dst-port=443 comment="Bloquear DoH conhecidos - ${t.label}"`;
+                }
+
+                if (t.forcedns) {
+                    cfg += `
+/ip firewall nat
+add chain=dstnat action=redirect protocol=udp dst-port=53${srcClause} to-ports=53 comment="Forcar DNS UDP - ${t.label}"
+add chain=dstnat action=redirect protocol=tcp dst-port=53${srcClause} to-ports=53 comment="Forcar DNS TCP - ${t.label}"`;
+                }
+
+                if (t.qosUp || t.qosDown) {
+                    cfg += `
+/ip firewall mangle`;
+                    if (t.qosUp) {
+                        cfg += `
+add action=mark-packet chain=forward${srcClause} new-packet-mark=qos_${t.key}_up passthrough=no comment="QoS upload - ${t.label}"`;
+                    }
+                    if (t.qosDown) {
+                        const dstClause = t.isRedeToda ? '' : ` dst-address-list=${t.key}`;
+                        cfg += `
+add action=mark-packet chain=forward${dstClause} new-packet-mark=qos_${t.key}_down passthrough=no comment="QoS download - ${t.label}"`;
+                    }
+                    cfg += `
+/queue tree`;
+                    if (t.qosUp) {
+                        cfg += `
+add name=QoS_${t.key}_UP parent=global-out packet-mark=qos_${t.key}_up max-limit=${t.qosUp}M comment="QoS upload - ${t.label}"`;
+                    }
+                    if (t.qosDown) {
+                        cfg += `
+add name=QoS_${t.key}_DOWN parent=global-in packet-mark=qos_${t.key}_down max-limit=${t.qosDown}M comment="QoS download - ${t.label}"`;
+                    }
+                }
+            });
+
+            return cfg;
+        }
+
+        // Event listeners
+        document.getElementById('tipo_principal').addEventListener('change', function() {
+            toggleConditionalFields('principal', this.value);
+        });
+        
+        document.getElementById('tipo_backup1').addEventListener('change', function() {
+            toggleConditionalFields('backup1', this.value);
+        });
+        
+        document.getElementById('tipo_backup2').addEventListener('change', function() {
+            toggleConditionalFields('backup2', this.value);
+        });
+        
+        document.getElementById('habilitar_qos').addEventListener('change', function() {
+            document.getElementById('qos_fields').classList.toggle('hidden', !this.checked);
+        });
+
+        document.getElementById('bloquear_rede_toda').addEventListener('change', function() {
+            document.getElementById('rede_toda_fields').classList.toggle('hidden', !this.checked);
+        });
+
+        populateSiteSelect('rede_toda');
+        populateInterfaceSelects();
+
+        function toggleConditionalFields(type, value) {
+            const pppoeFields = document.getElementById(`pppoe_${type}_fields`);
+            const staticFields = document.getElementById(`static_${type}_fields`);
+            
+            if (pppoeFields) pppoeFields.classList.add('hidden');
+            if (staticFields) staticFields.classList.add('hidden');
+            
+            if (value === 'pppoe' && pppoeFields) {
+                pppoeFields.classList.remove('hidden');
+            } else if (value === 'static' && staticFields) {
+                staticFields.classList.remove('hidden');
+            }
+        }
+
+        function adicionarBackup2() {
+            document.getElementById('backup2_section').classList.remove('hidden');
+            backup2Ativado = true;
+            document.getElementById('btnAddBackup2').style.display = 'none';
+        }
+
+        function removerBackup2() {
+            document.getElementById('backup2_section').classList.add('hidden');
+            backup2Ativado = false;
+            document.getElementById('btnAddBackup2').style.display = 'inline-flex';
+            // Limpar campos
+            document.querySelectorAll('#backup2_section input, #backup2_section select').forEach(field => {
+                field.value = '';
+            });
+        }
+
+        function validarInterfaces() {
+            const interfaces = [];
+            const principal = getInterfaceValue('principal');
+            const backup1 = getInterfaceValue('backup1');
+            const backup2 = backup2Ativado ? getInterfaceValue('backup2') : '';
+            const interfacesLan = document.getElementById('interfaces_lan').value.split(',').map(s => s.trim()).filter(s => s);
+
+            if (principal) interfaces.push(principal);
+            if (backup1) interfaces.push(backup1);
+            if (backup2) interfaces.push(backup2);
+
+            const duplicatas = interfaces.filter((item, index) => interfaces.indexOf(item) !== index);
+            if (duplicatas.length > 0) {
+                alert(`❌ Erro: Interface ${duplicatas[0]} está sendo usada em mais de um link WAN!`);
+                return false;
+            }
+
+            const conflitosLan = interfaces.filter(intf => interfacesLan.includes(intf));
+            if (conflitosLan.length > 0) {
+                alert(`❌ Erro: Interface ${conflitosLan[0]} está sendo usada tanto para WAN quanto para LAN!`);
+                return false;
+            }
+
+            return true;
+        }
+
+        function calcularRangeDHCP(rede) {
+            try {
+                const [ip, mascara] = rede.split('/');
+                const maskNum = parseInt(mascara);
+                const ipParts = ip.split('.').map(Number);
+                
+                const hostBits = 32 - maskNum;
+                const numHosts = Math.pow(2, hostBits) - 2;
+                
+                const inicioRange = [...ipParts];
+                inicioRange[3] = 10;
+                
+                const fimRange = [...ipParts];
+                if (maskNum >= 24) {
+                    fimRange[3] = Math.min(254, ipParts[3] + numHosts - 10);
+                } else if (maskNum >= 16) {
+                    fimRange[2] = ipParts[2] + Math.floor(numHosts / 256);
+                    fimRange[3] = 254;
+                }
+                
+                return `${inicioRange.join('.')}-${fimRange.join('.')}`;
+            } catch (e) {
+                return '192.168.10.10-192.168.11.254';
+            }
+        }
+        
+        function calcularGateway(rede) {
+            try {
+                const [ip, mascara] = rede.split('/');
+                const ipParts = ip.split('.').map(Number);
+                ipParts[3] = 1;
+                return ipParts.join('.');
+            } catch (e) {
+                return '192.168.10.1';
+            }
+        }
+
+        document.getElementById('configForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validarInterfaces()) {
+                return;
+            }
+
+            const avisos = verificacaoPrevia();
+            if (avisos.length) {
+                const msg = '⚠️ Verificação prévia encontrou ' + avisos.length + ' ponto(s) de atenção:\n\n' +
+                    avisos.map((a, i) => (i + 1) + '. ' + a).join('\n') +
+                    '\n\nDeseja gerar a configuração mesmo assim?';
+                if (!confirm(msg)) return;
+            }
+            
+            generateConfig();
+        });
+
+        function generateConfig() {
+            const identificacao = document.getElementById('identificacao').value;
+            const ddnsNome = document.getElementById('ddns_nome').value;
+            const redeLan = document.getElementById('rede_lan').value;
+            const nomeBridge = document.getElementById('nome_bridge').value.trim() || 'LAN';
+            const interfacesLan = document.getElementById('interfaces_lan').value;
+            const habilitarQos = document.getElementById('habilitar_qos').checked;
+            const velocidade = document.getElementById('velocidade').value;
+            
+            const rangeDhcp = calcularRangeDHCP(redeLan);
+            const gatewayLan = calcularGateway(redeLan);
+            const redeNetwork = redeLan.split('/')[0];
+            
+            const principal = coletarDadosLink('principal');
+            const backup1 = coletarDadosLink('backup1');
+            const backup2 = backup2Ativado ? coletarDadosLink('backup2') : null;
+
+            let config = `/interface bridge
+add name=${nomeBridge} protocol-mode=none
+/interface ethernet
+/ip pool
+add name=dhcp_pool0 ranges=${rangeDhcp}`;
+
+            config += gerarVlans(principal, backup1, backup2);
+            config += gerarConfigLink(principal, 'PRINCIPAL', 1);
+            config += gerarConfigLink(backup1, 'BACKUP-1', 2);
+            if (backup2) {
+                config += gerarConfigLink(backup2, 'BACKUP-2', 3);
+            }
+            
+            if (habilitarQos) {
+                config += `
+/queue type
+add kind=pcq name=${velocidade}mb-download pcq-burst-rate=${velocidade}M pcq-classifier=dst-address pcq-total-limit=20000KiB
+add kind=pcq name=${velocidade}mb-upload pcq-burst-rate=${velocidade}M pcq-classifier=src-address pcq-total-limit=20000KiB
+/queue simple
+add name=${nomeBridge} queue=${velocidade}mb-upload/${velocidade}mb-download target=${redeLan},${nomeBridge}`;
+            }
+            
+            config += `
+/system logging action
+set 1 disk-file-count=3`;
+
+            if (interfacesLan.trim()) {
+                const interfaces = interfacesLan.split(',').map(s => s.trim());
+                interfaces.forEach((intf, index) => {
+                    config += `
+/interface bridge port
+add bridge=${nomeBridge} interface=${intf} comment="LAN-ACESSO-${intf.toUpperCase()}"`;
+                });
+            }
+            
+            config += `
+/ip firewall connection tracking
+set tcp-established-timeout=5m
+/ip settings
+set rp-filter=strict
+/ip address
+add address=${gatewayLan}/23 interface=${nomeBridge} network=${redeNetwork}
+/ip dhcp-server
+add address-pool=dhcp_pool0 interface=${nomeBridge} lease-time=5m name=dhcp1
+/ip dhcp-server network
+add address=${redeLan} gateway=${gatewayLan}
+/ip firewall address-list
+add address=${redeLan} list=LAN
+add address=${redeLan} list=rede-gerencia
+/ip firewall filter
+add action=accept chain=input comment="Aceita conexoes estabelecidas ou relacionadas" connection-state=established,related
+add action=accept chain=input comment="Aceita rede gerencia" src-address-list=rede-gerencia
+add action=accept chain=input comment="Aceita 100 pacotes de ICMP por segundo" limit=100,5:packet protocol=icmp
+add action=drop chain=input comment="Drop Geral"
+/ip firewall nat`;
+
+            config += gerarNAT(principal, backup1, backup2);
+            
+            config += `
+/ip route
+add check-gateway=ping comment="ROTA PRINCIPAL" distance=1 gateway=${principal.ipMonitor} target-scope=11
+add check-gateway=ping comment="ROTA BACKUP-1" distance=2 gateway=${backup1.ipMonitor} target-scope=11`;
+
+            if (backup2) {
+                config += `
+add check-gateway=ping comment="ROTA BACKUP-2" distance=3 gateway=${backup2.ipMonitor} target-scope=11`;
+            }
+
+            config += `
+/ip service
+set ftp disabled=yes
+set ssh disabled=yes
+set telnet disabled=yes
+set www disabled=yes
+set winbox address=${redeLan}
+set api disabled=yes
+set api-ssl disabled=yes
+/system clock
+set time-zone-autodetect=no time-zone-name=America/Fortaleza
+/system ntp client
+set enabled=yes servers=a.ntp.br,b.ntp.br,c.ntp.br
+/system identity
+set name=${identificacao}${ddnsNome ? `
+/ip cloud
+set ddns-enabled=yes
+# DDNS conhecido no momento da configuracao: ${ddnsNome}
+# (nome real e atribuido/gerenciado pela MikroTik Cloud - confirme com /ip cloud print)` : ''}
+/system logging
+add action=disk topics=critical
+add action=disk topics=error
+add action=disk topics=info,!pppoe
+add action=disk topics=warning
+/system package update
+set channel=long-term
+/tool netwatch
+add down-script=":log error \\"LINK PRINCIPAL DOWN!\\"" host=${principal.ipMonitor} type=simple up-script=":log warning \\"LINK PRINCIPAL UP!\\""
+add down-script=":log error \\"LINK BACKUP-1 DOWN!\\"" host=${backup1.ipMonitor} type=simple up-script=":log warning \\"LINK BACKUP-1 UP!\\""`;
+
+            if (backup2) {
+                config += `
+add down-script=":log error \\"LINK BACKUP-2 DOWN!\\"" host=${backup2.ipMonitor} type=simple up-script=":log warning \\"LINK BACKUP-2 UP!\\""`;
+            }
+
+            config += gerarFiltrosBloqueio(principal, backup1, backup2);
+
+            const outras = document.getElementById('outrasConfiguracoes').value.trim();
+            if (outras) {
+                config += `
+
+# ===================================================================
+# OUTRAS CONFIGURACOES (importadas / manuais)
+# ===================================================================
+` + outras;
+            }
+            
+            document.getElementById('configOutput').value = config;
+            
+            // Habilitar botões de ação
+            document.getElementById('downloadRsc').disabled = false;
+            document.getElementById('downloadTxt').disabled = false;
+            document.getElementById('previewBtn').disabled = false;
+            
+            // Scroll suave para os botões
+            document.querySelector('.action-buttons').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function getInterfaceValue(sufixo) {
+            const sel = document.getElementById(`interface_${sufixo}`);
+            if (!sel) return '';
+            if (sel.value === 'custom') {
+                const custom = document.getElementById(`interface_${sufixo}_custom`);
+                return custom ? custom.value.trim() : '';
+            }
+            return sel.value;
+        }
+
+        function toggleCustomInterface(sufixo) {
+            const sel = document.getElementById(`interface_${sufixo}`);
+            const custom = document.getElementById(`interface_${sufixo}_custom`);
+            if (!sel || !custom) return;
+            custom.classList.toggle('hidden', sel.value !== 'custom');
+        }
+
+
+        function populateInterfaceSelects() {
+            const options = (detectedInterfaces.length ? detectedInterfaces : DEFAULT_INTERFACE_OPTIONS);
+            ['principal', 'backup1', 'backup2'].forEach(sufixo => {
+                const sel = document.getElementById(`interface_${sufixo}`);
+                if (!sel) return;
+                const atual = sel.value;
+                sel.innerHTML = '<option value="">Selecione...</option>' +
+                    options.map(i => `<option value="${i}">${i}</option>`).join('') +
+                    '<option value="custom">Outro (digitar)...</option>';
+                if (atual && options.includes(atual)) sel.value = atual;
+            });
+        }
+
+        function coletarDadosLink(sufixo) {
+            return {
+                interface: getInterfaceValue(sufixo),
+                tipo: document.getElementById(`tipo_${sufixo}`).value,
+                vlan: document.getElementById(`vlan_${sufixo}`).value,
+                ipMonitor: document.getElementById(`ip_monitor_${sufixo}`).value,
+                operadora: document.getElementById(`operadora_${sufixo}`).value,
+                usuario: document.getElementById(`usuario_pppoe_${sufixo}`)?.value || '',
+                senha: document.getElementById(`senha_pppoe_${sufixo}`)?.value || '',
+                ip: document.getElementById(`ip_${sufixo}`)?.value || '',
+                gateway: document.getElementById(`gateway_${sufixo}`)?.value || ''
+            };
+        }
+
+        function gerarVlans(principal, backup1, backup2) {
+            let config = '';
+            
+            if (principal.vlan) {
+                config += `
+/interface vlan
+add interface=${principal.interface} name=${principal.interface}.${principal.vlan} vlan-id=${principal.vlan} comment="VLAN-${principal.operadora.toUpperCase()}-PRINCIPAL"`;
+            }
+            
+            if (backup1.vlan) {
+                config += `
+/interface vlan
+add interface=${backup1.interface} name=${backup1.interface}.${backup1.vlan} vlan-id=${backup1.vlan} comment="VLAN-${backup1.operadora.toUpperCase()}-BACKUP1"`;
+            }
+            
+            if (backup2 && backup2.vlan) {
+                config += `
+/interface vlan
+add interface=${backup2.interface} name=${backup2.interface}.${backup2.vlan} vlan-id=${backup2.vlan} comment="VLAN-${backup2.operadora.toUpperCase()}-BACKUP2"`;
+            }
+            
+            return config;
+        }
+
+        function gerarConfigLink(dados, nome, distance) {
+            const interfaceReal = dados.vlan ? `${dados.interface}.${dados.vlan}` : dados.interface;
+            const tipoUpper = dados.tipo.toUpperCase();
+            const vlanInfo = dados.vlan ? `-VLAN${dados.vlan}` : '';
+            const comentarioCompleto = `${interfaceReal.toUpperCase()}-${dados.operadora.toUpperCase()}-${nome}-${tipoUpper}${vlanInfo}`;
+            
+            let config = '';
+            
+            if (dados.tipo === 'pppoe') {
+                config += `
+/ppp profile
+add change-tcp-mss=yes name=${nome} on-down="/ip route remove [find comment=\\"MONITOR-${nome}\\"]" on-up="/ip route add dst=${dados.ipMonitor} gateway=\\$\\"remote-address\\" scope=10 comment=MONITOR-${nome}\\r"
+/interface pppoe-client
+add allow=chap,mschap1,mschap2 disabled=no interface=${interfaceReal} name=pppoe-${dados.operadora} password=${dados.senha} profile=${nome} user=${dados.usuario} comment="${comentarioCompleto}"`;
+                
+            } else if (dados.tipo === 'dhcp') {
+                config += `
+/ip dhcp-client
+add add-default-route=no interface=${interfaceReal} script="{\\r\\
+    \\n    :if (\\$bound=1) do={\\r\\
+    \\n  /ip route add dst=${dados.ipMonitor} gateway=\\$\\"gateway-address\\" scope=10 comment=MONITOR-${nome}\\r\\
+    \\n    } else={\\r\\
+    \\n  /ip route remove [find comment=\\"MONITOR-${nome}\\"]\\r\\
+    \\n    }\\r\\
+    \\n}\\r\\
+    \\n" comment="${comentarioCompleto}"`;
+                    
+            } else if (dados.tipo === 'static') {
+                config += `
+/ip address
+add address=${dados.ip} interface=${interfaceReal} comment="${comentarioCompleto}"
+/ip route
+add dst-address=${dados.ipMonitor} gateway=${dados.gateway} scope=10 comment=MONITOR-${nome}`;
+            }
+            
+            return config;
+        }
+
+        function gerarNAT(principal, backup1, backup2) {
+            let config = '';
+            
+            if (principal.tipo === 'pppoe') {
+                config += `
+add action=masquerade chain=srcnat out-interface=pppoe-${principal.operadora} src-address-list=LAN`;
+            } else {
+                const interfaceReal = principal.vlan ? `${principal.interface}.${principal.vlan}` : principal.interface;
+                config += `
+add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-list=LAN`;
+            }
+            
+            if (backup1.tipo === 'pppoe') {
+                config += `
+add action=masquerade chain=srcnat out-interface=pppoe-${backup1.operadora} src-address-list=LAN`;
+            } else {
+                const interfaceReal = backup1.vlan ? `${backup1.interface}.${backup1.vlan}` : backup1.interface;
+                config += `
+add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-list=LAN`;
+            }
+            
+            if (backup2) {
+                if (backup2.tipo === 'pppoe') {
+                    config += `
+add action=masquerade chain=srcnat out-interface=pppoe-${backup2.operadora} src-address-list=LAN`;
+                } else {
+                    const interfaceReal = backup2.vlan ? `${backup2.interface}.${backup2.vlan}` : backup2.interface;
+                    config += `
+add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-list=LAN`;
+                }
+            }
+            
+            return config;
+        }
+
+        function copyConfig() {
+            const configOutput = document.getElementById('configOutput');
+            configOutput.select();
+            document.execCommand('copy');
+            
+            const copyBtn = document.querySelector('.copy-btn');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '✅ Copiado!';
+            copyBtn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+            
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            }, 2000);
+        }
+
+        function downloadConfig(type) {
+            const config = document.getElementById('configOutput').value;
+            const identificacao = document.getElementById('identificacao').value || 'mikrotik-failover';
+            
+            let filename, mimeType;
+            
+            if (type === 'rsc') {
+                filename = `${identificacao}-failover.rsc`;
+                mimeType = 'application/octet-stream';
+            } else {
+                filename = `${identificacao}-failover.txt`;
+                mimeType = 'text/plain';
+            }
+            
+            const blob = new Blob([config], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            // Feedback visual
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = type === 'rsc' ? '✅ RSC' : '✅ TXT';
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 1500);
+        }
+
+        function togglePreview() {
+            const result = document.getElementById('result');
+            const previewBtn = document.getElementById('previewBtn');
+            
+            if (result.style.display === 'none' || result.style.display === '') {
+                result.style.display = 'block';
+                result.scrollIntoView({ behavior: 'smooth' });
+                previewBtn.textContent = '🔍 Ocultar';
+            } else {
+                result.style.display = 'none';
+                previewBtn.textContent = '👁️ Preview';
+            }
+        }
+
+        // ============================================================
+        // IMPORTAÇÃO DE .RSC
+        // ============================================================
+        async function importarRsc() {
+            const fileInput = document.getElementById('importFile');
+            if (!fileInput.files.length) {
+                alert('Selecione um arquivo .rsc primeiro.');
+                return;
+            }
+            const text = await fileInput.files[0].text();
+            parseRsc(text);
+        }
+
+        function getWanSlot(comment) {
+            if (!comment) return null;
+            const c = comment.toUpperCase();
+            if (c.includes('PRINCIPAL')) return 'principal';
+            if (c.includes('BACKUP-1') || c.includes('BACKUP1')) return 'backup1';
+            if (c.includes('BACKUP-2') || c.includes('BACKUP2')) return 'backup2';
+            return null;
+        }
+
+        function normLabel(s) {
+            if (!s) return '';
+            return s.toUpperCase().replace(/^LINK[_\-]?/, '').replace(/[^A-Z0-9]/g, '');
+        }
+
+        function prettifyLabel(raw) {
+            if (!raw) return '';
+            return raw.replace(/^LINK[_\s]?/i, '').replace(/_/g, ' ').trim().toUpperCase();
+        }
+
+        function guessOperadora(comment) {
+            if (!comment) return '';
+            const parts = comment.split('-');
+            return parts.length >= 2 ? parts[1] : prettifyLabel(comment);
+        }
+
+        function isReservedListName(name) {
+            return ['LAN', 'rede-gerencia', 'doh_providers'].includes(name);
+        }
+
+        function parseRsc(text) {
+            // junta linhas quebradas com "\" (padrão de export do RouterOS)
+            const normalized = text.replace(/\\\r?\n[ \t]*/g, '');
+            const lines = normalized.split(/\r?\n/);
+
+            let currentPath = '';
+            const unmatched = [];
+            let lastOutrasPath = null;
+
+            const extracted = {
+                identificacao: null,
+                redeLan: null,
+                nomeBridge: null,
+                ddnsHabilitado: false,
+                ddnsNome: null,
+                wan: { principal: {}, backup1: {}, backup2: null },
+                groups: {},
+                redeToda: null,
+                _layer7: {},
+                _customLabels: {},
+                _legacyDisabledSites: [],
+                detectedInterfaces: new Set(),
+                bridgePortMembers: new Set(),
+                internalTunnelInterfaces: new Set(),
+                referencedListNames: new Set(),
+                legacySiteListNames: new Set(),
+                clusters: {} // pass-2 fallback: normLabel -> dados parciais de link
+            };
+
+            const LEGACY_SITE_KEYWORD_MAP = {
+                spotify: 'spotify', instagram: 'meta', facebook: 'meta', cdninstagram: 'meta', fbsbx: 'meta',
+                netflix: 'netflix', youtube: 'youtube', tiktok: 'tiktok', twitter: 'twitter', x: 'twitter',
+                discord: 'discord', twitch: 'twitch', steam: 'steam'
+            };
+
+            const getTarget = (listName) => {
+                if (listName) {
+                    extracted.groups[listName] = extracted.groups[listName] || { ips: [], sites: [], quic: false, dot: false, doh: false, forcedns: false };
+                    return extracted.groups[listName];
+                }
+                extracted.redeToda = extracted.redeToda || { sites: [], quic: false, dot: false, doh: false, forcedns: false };
+                return extracted.redeToda;
+            };
+
+            const cluster = (rawLabel) => {
+                const key = normLabel(rawLabel);
+                if (!key) return null;
+                extracted.clusters[key] = extracted.clusters[key] || { rawLabel };
+                return extracted.clusters[key];
+            };
+
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line) continue;
+                if (line.startsWith('#')) continue;
+                if (line.startsWith('/')) { currentPath = line; continue; }
+
+                const cmdMatch = line.match(/^(\S+)/);
+                const cmd = cmdMatch ? cmdMatch[1] : '';
+                const params = {};
+                const re = /([a-zA-Z0-9\-]+)=("(?:[^"\\]|\\.)*"|\S+)/g;
+                let m;
+                while ((m = re.exec(line))) {
+                    let val = m[2];
+                    if (val.startsWith('"') && val.endsWith('"')) {
+                        val = val.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+                    }
+                    params[m[1]] = val;
+                }
+
+                // coleta genérica de nomes de address-list referenciados em qualquer linha,
+                // usada só para o aviso de colisão (evita duplicar grupos/listas já existentes)
+                ['list', 'address-list', 'src-address-list', 'dst-address-list'].forEach(k => {
+                    if (params[k]) {
+                        const n = params[k].replace(/^!/, '');
+                        if (n && !isReservedListName(n)) extracted.referencedListNames.add(n);
+                    }
+                });
+
+                let matched = false;
+
+                if (currentPath === '/system identity' && cmd === 'set' && params.name) {
+                    extracted.identificacao = params.name; matched = true;
+                }
+                else if (currentPath === '/ip cloud' && cmd === 'set') {
+                    if (params['ddns-enabled'] === 'yes') extracted.ddnsHabilitado = true;
+                    if (params['dns-name']) extracted.ddnsNome = params['dns-name'];
+                    matched = true;
+                }
+                else if (currentPath === '/interface bridge' && cmd === 'add' && params.name) {
+                    if (!extracted.nomeBridge) extracted.nomeBridge = params.name;
+                    extracted.detectedInterfaces.add(params.name);
+                    matched = true;
+                }
+                else if (currentPath === '/interface bridge port' && cmd === 'add') {
+                    if (params.interface) extracted.bridgePortMembers.add(params.interface);
+                    matched = true;
+                }
+                else if (currentPath === '/interface ethernet' && cmd === 'set') {
+                    const phys = params['default-name'] || params['find'];
+                    if (phys) {
+                        extracted.detectedInterfaces.add(phys);
+                        if (params.comment) {
+                            const c = cluster(params.comment);
+                            if (c) { c.interface = phys; if (!c.operadora) c.operadora = prettifyLabel(params.comment); }
+                        }
+                        matched = true;
+                    }
+                }
+                else if ((currentPath === '/interface gre' || currentPath === '/interface sstp-client' || currentPath === '/interface pptp-client' || currentPath === '/interface l2tp-client' || currentPath === '/interface ovpn-client' || currentPath === '/interface wireguard' || currentPath === '/interface eoip') && cmd === 'add' && params.name) {
+                    extracted.internalTunnelInterfaces.add(params.name);
+                    matched = true;
+                }
+                else if (currentPath === '/interface pppoe-client' && cmd === 'add') {
+                    if (params.interface) extracted.detectedInterfaces.add(params.interface);
+                    const slot = getWanSlot(params.comment);
+                    if (slot) {
+                        const iv = splitInterfaceVlan(params.interface || '');
+                        extracted.wan[slot] = Object.assign({}, extracted.wan[slot], { tipo: 'pppoe', interface: iv.interface, vlan: iv.vlan || (extracted.wan[slot] && extracted.wan[slot].vlan) || '', usuario: params.user, senha: params.password, operadora: guessOperadora(params.comment) });
+                    }
+                    if (params.comment) {
+                        const c = cluster(params.comment);
+                        if (c) {
+                            const iv = splitInterfaceVlan(params.interface || '');
+                            c.tipo = 'pppoe'; c.interface = iv.interface; if (iv.vlan) c.vlan = iv.vlan;
+                            c.usuario = params.user; c.senha = params.password;
+                            if (!c.operadora) c.operadora = prettifyLabel(params.comment);
+                        }
+                    }
+                    matched = true;
+                }
+                else if (currentPath === '/ip dhcp-client' && cmd === 'add') {
+                    if (params.interface) extracted.detectedInterfaces.add(params.interface);
+                    const slot = getWanSlot(params.comment);
+                    if (slot) {
+                        const iv = splitInterfaceVlan(params.interface || '');
+                        extracted.wan[slot] = Object.assign({}, extracted.wan[slot], { tipo: 'dhcp', interface: iv.interface, vlan: iv.vlan || (extracted.wan[slot] && extracted.wan[slot].vlan) || '', operadora: guessOperadora(params.comment) });
+                    }
+                    if (params.comment) {
+                        const c = cluster(params.comment);
+                        if (c) {
+                            const iv = splitInterfaceVlan(params.interface || '');
+                            c.tipo = 'dhcp'; c.interface = iv.interface; if (iv.vlan) c.vlan = iv.vlan;
+                            if (!c.operadora) c.operadora = prettifyLabel(params.comment);
+                        }
+                    }
+                    matched = true;
+                }
+                else if (currentPath === '/ip address' && cmd === 'add') {
+                    if (params.interface) extracted.detectedInterfaces.add(params.interface);
+                    const isLanSide = params.interface === 'LAN' ||
+                        params.interface === extracted.nomeBridge ||
+                        extracted.bridgePortMembers.has(params.interface) ||
+                        extracted.internalTunnelInterfaces.has(params.interface);
+                    if (isLanSide) {
+                        if (params.interface !== extracted.nomeBridge && params.interface !== 'LAN') {
+                            // provavelmente a própria bridge/LAN - nada a extrair de link WAN aqui
+                        }
+                        matched = true;
+                    } else {
+                        const slot = getWanSlot(params.comment);
+                        if (slot) {
+                            const iv = splitInterfaceVlan(params.interface || '');
+                            extracted.wan[slot] = Object.assign({}, extracted.wan[slot], { tipo: 'static', interface: iv.interface, vlan: iv.vlan || (extracted.wan[slot] && extracted.wan[slot].vlan) || '', ip: params.address, operadora: guessOperadora(params.comment) });
+                        }
+                        if (params.comment) {
+                            const c = cluster(params.comment);
+                            if (c) {
+                                const iv = splitInterfaceVlan(params.interface || '');
+                                if (!c.tipo) c.tipo = 'static';
+                                c.interface = iv.interface; if (iv.vlan) c.vlan = iv.vlan;
+                                c.ip = params.address;
+                                if (!c.operadora) c.operadora = prettifyLabel(params.comment);
+                            }
+                        }
+                        matched = true;
+                    }
+                }
+                else if (currentPath === '/ip route' && cmd === 'add') {
+                    const isDefaultRoute = (!params['dst-address'] || params['dst-address'] === '0.0.0.0/0') && params.gateway && params.distance;
+                    if (params.comment && /^ROTA/i.test(params.comment)) {
+                        let key = null;
+                        if (/PRINCIPAL/i.test(params.comment)) key = 'principal';
+                        else if (/BACKUP-1|BACKUP1/i.test(params.comment)) key = 'backup1';
+                        else if (/BACKUP-2|BACKUP2/i.test(params.comment)) key = 'backup2';
+                        if (key) {
+                            if (key === 'backup2') extracted.wan.backup2 = extracted.wan.backup2 || {};
+                            extracted.wan[key].ipMonitor = params.gateway;
+                            matched = true;
+                        }
+                    } else if (params.comment && /^MONITOR-/i.test(params.comment)) {
+                        const slotTxt = params.comment.replace(/^MONITOR-/i, '');
+                        let key = null;
+                        if (/principal/i.test(slotTxt)) key = 'principal';
+                        else if (/backup-1|backup1/i.test(slotTxt)) key = 'backup1';
+                        else if (/backup-2|backup2/i.test(slotTxt)) key = 'backup2';
+                        if (key) {
+                            if (key === 'backup2') extracted.wan.backup2 = extracted.wan.backup2 || {};
+                            if (params.gateway) extracted.wan[key].gateway = params.gateway;
+                            matched = true;
+                        }
+                    } else if (isDefaultRoute && params.comment) {
+                        // possível rota default "crua" (ex: comment=LINK_VIVO distance=1 gateway=X) - alimenta o cluster p/ fallback
+                        const c = cluster(params.comment);
+                        if (c) { c.distance = parseInt(params.distance, 10); c.monitorGateway = params.gateway; }
+                        matched = true;
+                    } else if (isDefaultRoute) {
+                        matched = true; // rota default sem comment reconhecível - ignora com segurança
+                    }
+                }
+                else if (currentPath === '/interface vlan' && cmd === 'add') {
+                    if (params.interface) extracted.detectedInterfaces.add(params.interface);
+                    if (params.name) extracted.detectedInterfaces.add(params.name);
+                    const slot = getWanSlot(params.comment);
+                    if (slot) {
+                        if (slot === 'backup2') extracted.wan.backup2 = extracted.wan.backup2 || {};
+                        extracted.wan[slot] = Object.assign({}, extracted.wan[slot], { interface: params.interface, vlan: params['vlan-id'] });
+                    }
+                    if (params.comment) {
+                        const c = cluster(params.comment);
+                        if (c) { c.interface = params.interface; c.vlan = params['vlan-id']; }
+                    }
+                    matched = true;
+                }
+                else if (currentPath === '/ip dhcp-server network' && cmd === 'add') {
+                    if (params.address) { extracted.redeLan = params.address; matched = true; }
+                }
+                else if (currentPath === '/ip firewall address-list' && cmd === 'add') {
+                    if (params.list === 'LAN' || params.list === 'rede-gerencia' || params.list === 'doh_providers') {
+                        matched = true;
+                    } else if (params.list) {
+                        if (params.address) getTarget(params.list).ips.push(params.address);
+                        matched = true;
+                    }
+                }
+                else if (currentPath === '/ip firewall layer7-protocol' && cmd === 'add') {
+                    if (params.name && params.name !== 'doh_sni') extracted._layer7[params.name] = params.regexp;
+                    matched = true;
+                }
+                else if (currentPath === '/ip firewall mangle' && cmd === 'add' && params['layer7-protocol'] && params.disabled !== 'yes') {
+                    const site = params['layer7-protocol'];
+                    const target = getTarget(params['src-address-list']);
+                    if (site === 'doh_sni') target.doh = true;
+                    else if (!target.sites.includes(site)) target.sites.push(site);
+                    matched = true;
+                }
+                else if (currentPath === '/ip firewall filter' && cmd === 'add' && params.action === 'add-dst-to-address-list' && params['tls-host']) {
+                    const listName = params['address-list'];
+                    if (listName) extracted.legacySiteListNames.add(listName);
+                    const rawKeyword = params['tls-host'].replace(/\*/g, '').toLowerCase();
+                    const mapped = LEGACY_SITE_KEYWORD_MAP[rawKeyword];
+                    const target = getTarget(params['src-address-list']);
+                    let siteId, siteLabel, siteRegex;
+                    if (mapped) {
+                        const cat = SITE_CATALOG.find(s => s.id === mapped);
+                        siteId = cat.id; siteLabel = cat.label; siteRegex = cat.regex;
+                    } else {
+                        siteId = 'legacy_' + rawKeyword.replace(/[^a-z0-9]+/g, '_');
+                        siteLabel = params.comment || rawKeyword;
+                        siteRegex = buildRegex(rawKeyword);
+                    }
+                    if (!target.sites.includes(siteId)) target.sites.push(siteId);
+                    if (!extracted._layer7[siteId]) extracted._layer7[siteId] = siteRegex;
+                    if (!extracted._customLabels[siteId]) extracted._customLabels[siteId] = siteLabel;
+                    if (params.disabled === 'yes') {
+                        target._importedDisabled = true;
+                        if (!extracted._legacyDisabledSites.includes(siteLabel)) extracted._legacyDisabledSites.push(siteLabel);
+                    }
+                    matched = true;
+                }
+                else if (currentPath === '/ip firewall filter' && cmd === 'add' && params.action === 'drop' && params['dst-address-list'] && extracted.legacySiteListNames.has(params['dst-address-list'])) {
+                    matched = true; // regra de drop do mecanismo legado (tls-host) - já representada via os sites importados acima
+                }
+                else if (currentPath === '/ip firewall filter' && cmd === 'add' && params.disabled !== 'yes') {
+                    if (params.protocol === 'udp' && params['dst-port'] === '443' && !params['in-interface']) {
+                        getTarget(params['src-address-list']).quic = true; matched = true;
+                    } else if (params['dst-port'] === '853') {
+                        getTarget(params['src-address-list']).dot = true; matched = true;
+                    } else if (params['dst-address-list'] === 'doh_providers') {
+                        getTarget(params['src-address-list']).doh = true; matched = true;
+                    } else if (params['packet-mark']) {
+                        matched = true; // redundante, já capturado via mangle
+                    } else if (params['dst-port'] === '53' && params['in-interface']) {
+                        matched = true; // regra anti-spoof WAN, regenerada automaticamente
+                    }
+                }
+                else if (currentPath === '/ip firewall nat' && cmd === 'add') {
+                    const isForceDnsRedirect = params.action === 'redirect' && params['dst-port'] === '53';
+                    const listaNegada = params['src-address-list'] && params['src-address-list'].startsWith('!');
+                    if (isForceDnsRedirect && params.disabled !== 'yes' && !listaNegada) {
+                        getTarget(params['src-address-list']).forcedns = true; matched = true;
+                    } else if (params.action === 'masquerade') {
+                        matched = true; // regenerado automaticamente a partir dos links WAN
+                    }
+                    // redirect desabilitado ou com lista negada (ex: regra manual antiga tipo Dns_Cache)
+                    // fica sem matched=true de propósito -> cai em "Outras Configurações" em vez de virar grupo
+                }
+                else if (currentPath === '/ip dns' && cmd === 'set' && params['allow-remote-requests'] !== undefined) {
+                    matched = true;
+                }
+                else if (currentPath === '/ip dns static' && cmd === 'add' && params.name === 'use-application-dns.net') {
+                    matched = true;
+                }
+
+                if (!matched) {
+                    if (lastOutrasPath !== currentPath) { unmatched.push({ header: true, text: currentPath }); lastOutrasPath = currentPath; }
+                    unmatched.push({ header: false, text: line });
+                }
+            }
+
+            // ---- PASSO 2: fallback por rótulo/distância p/ slots WAN ainda vazios ----
+            const slotsPreenchidos = new Set();
+            ['principal', 'backup1', 'backup2'].forEach(k => {
+                if (extracted.wan[k] && extracted.wan[k].tipo) slotsPreenchidos.add(k);
+            });
+
+            const candidatos = Object.values(extracted.clusters)
+                .filter(c => c.tipo && c.interface)
+                .sort((a, b) => {
+                    const da = (a.distance === undefined ? 999 : a.distance);
+                    const db = (b.distance === undefined ? 999 : b.distance);
+                    return da - db;
+                });
+
+            const slotsVazios = ['principal', 'backup1', 'backup2'].filter(k => !slotsPreenchidos.has(k));
+            let usados = 0;
+            for (const cand of candidatos) {
+                if (usados >= slotsVazios.length) break;
+                const slotKey = slotsVazios[usados];
+                if (slotKey === 'backup2') extracted.wan.backup2 = extracted.wan.backup2 || {};
+                extracted.wan[slotKey] = {
+                    tipo: cand.tipo,
+                    interface: cand.interface,
+                    vlan: cand.vlan || '',
+                    usuario: cand.usuario,
+                    senha: cand.senha,
+                    ip: cand.ip,
+                    gateway: cand.gateway,
+                    ipMonitor: cand.monitorGateway || '',
+                    operadora: cand.operadora || prettifyLabel(cand.rawLabel),
+                    _viaFallback: true
+                };
+                usados++;
+            }
+
+            // interfaces genéricas (sem VLAN/bridge) para popular o dropdown, ordenadas
+            const listaInterfaces = Array.from(extracted.detectedInterfaces).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+            aplicarExtracao(extracted, unmatched, listaInterfaces);
+        }
+
+        function preencherLink(sufixo, dados) {
+            if (!dados || !dados.tipo) return;
+            if (dados.interface) {
+                const sel = document.getElementById('interface_' + sufixo);
+                if (sel) {
+                    const existe = Array.from(sel.options).some(o => o.value === dados.interface);
+                    if (!existe) {
+                        const opt = document.createElement('option');
+                        opt.value = dados.interface;
+                        opt.textContent = dados.interface;
+                        sel.insertBefore(opt, sel.lastElementChild);
+                    }
+                    sel.value = dados.interface;
+                }
+            }
+            document.getElementById('tipo_' + sufixo).value = dados.tipo;
+            toggleConditionalFields(sufixo, dados.tipo);
+            if (dados.vlan) document.getElementById('vlan_' + sufixo).value = dados.vlan;
+            if (dados.ipMonitor) document.getElementById('ip_monitor_' + sufixo).value = dados.ipMonitor;
+            if (dados.operadora) document.getElementById('operadora_' + sufixo).value = dados.operadora;
+            if (dados.tipo === 'pppoe') {
+                if (dados.usuario) document.getElementById('usuario_pppoe_' + sufixo).value = dados.usuario;
+                if (dados.senha) document.getElementById('senha_pppoe_' + sufixo).value = dados.senha;
+            } else if (dados.tipo === 'static') {
+                if (dados.ip) document.getElementById('ip_' + sufixo).value = dados.ip;
+                if (dados.gateway) document.getElementById('gateway_' + sufixo).value = dados.gateway;
+            }
+        }
+
+        function aplicarExtracao(ex, unmatched, listaInterfaces) {
+            if (listaInterfaces && listaInterfaces.length) {
+                detectedInterfaces = listaInterfaces;
+                populateInterfaceSelects();
+            }
+
+            if (ex.identificacao) document.getElementById('identificacao').value = ex.identificacao;
+            if (ex.redeLan) document.getElementById('rede_lan').value = ex.redeLan;
+            if (ex.nomeBridge) document.getElementById('nome_bridge').value = ex.nomeBridge;
+            if (ex.ddnsHabilitado) {
+                document.getElementById('ddns_nome').value = ex.ddnsNome || document.getElementById('ddns_nome').value;
+                document.getElementById('ddns_hint').textContent = 'DDNS habilitado detectado no .rsc importado (MikroTik Cloud). ' +
+                    (ex.ddnsNome ? 'Nome encontrado: ' + ex.ddnsNome + '.' : 'O nome exato não fica salvo no arquivo — confirme com /ip cloud print no equipamento e preencha aqui se quiser incluir no export.');
+            }
+
+            preencherLink('principal', ex.wan.principal);
+            preencherLink('backup1', ex.wan.backup1);
+            if (ex.wan.backup2 && ex.wan.backup2.tipo) {
+                document.getElementById('backup2_section').classList.remove('hidden');
+                backup2Ativado = true;
+                document.getElementById('btnAddBackup2').style.display = 'none';
+                preencherLink('backup2', ex.wan.backup2);
+            }
+
+            let gruposImportados = 0;
+            const nomesGruposImportados = [];
+            Object.keys(ex.groups).forEach(listName => {
+                const g = ex.groups[listName];
+                if (g.sites.length === 0 && !g.quic && !g.dot && !g.doh && !g.forcedns && g.ips.length === 0) return; // lista vazia sem sinal de uso - ignora
+                const id = adicionarGrupo();
+                document.getElementById('nome_' + id).value = listName;
+                document.getElementById('ips_' + id).value = (g.ips || []).join('\n');
+                document.getElementById('quic_' + id).checked = !!g.quic;
+                document.getElementById('dot_' + id).checked = !!g.dot;
+                document.getElementById('doh_' + id).checked = !!g.doh;
+                document.getElementById('forcedns_' + id).checked = !!g.forcedns;
+                (g.sites || []).forEach(siteId => {
+                    const cat = SITE_CATALOG.find(s => s.id === siteId);
+                    if (cat) groupSites[id].push({ id: cat.id, label: cat.label, regex: cat.regex });
+                    else groupSites[id].push({ id: siteId, label: (ex._customLabels && ex._customLabels[siteId]) || siteId, regex: ex._layer7[siteId] || '' });
+                });
+                renderChips(id);
+                gruposImportados++;
+                nomesGruposImportados.push(listName);
+            });
+
+            if (ex.redeToda) {
+                document.getElementById('bloquear_rede_toda').checked = true;
+                document.getElementById('rede_toda_fields').classList.remove('hidden');
+                document.getElementById('quic_rede_toda').checked = !!ex.redeToda.quic;
+                document.getElementById('dot_rede_toda').checked = !!ex.redeToda.dot;
+                document.getElementById('doh_rede_toda').checked = !!ex.redeToda.doh;
+                document.getElementById('forcedns_rede_toda').checked = !!ex.redeToda.forcedns;
+                (ex.redeToda.sites || []).forEach(siteId => {
+                    const cat = SITE_CATALOG.find(s => s.id === siteId);
+                    if (cat) groupSites['rede_toda'].push({ id: cat.id, label: cat.label, regex: cat.regex });
+                    else groupSites['rede_toda'].push({ id: siteId, label: (ex._customLabels && ex._customLabels[siteId]) || siteId, regex: ex._layer7[siteId] || '' });
+                });
+                renderChips('rede_toda');
+            }
+
+            // listas/grupos existentes não gerenciados por esta tela (evita duplicação/colisão de nomes)
+            existingListNames = Array.from(ex.referencedListNames).filter(n => !nomesGruposImportados.includes(n) && !ex.legacySiteListNames.has(n));
+            const painelListas = document.getElementById('existingGroupsWarning');
+            if (existingListNames.length) {
+                painelListas.classList.remove('hidden');
+                painelListas.innerHTML = '⚠️ <strong>Address-lists já existentes no arquivo, não gerenciadas por esta tela:</strong> ' +
+                    existingListNames.map(n => `<code>${n}</code>`).join(', ') +
+                    '. Evite criar um novo grupo com um desses nomes — para não conflitar com regras já existentes no MikroTik.';
+            } else {
+                painelListas.classList.add('hidden');
+            }
+
+            let outrasText = '';
+            unmatched.forEach(u => {
+                outrasText += (outrasText ? '\n' : '') + u.text;
+            });
+            document.getElementById('outrasConfiguracoes').value = outrasText.trim();
+
+            const status = document.getElementById('importStatus');
+            status.classList.remove('hidden');
+            const linhasOutras = unmatched.filter(u => !u.header).length;
+            const viaFallback = ['principal', 'backup1', 'backup2'].filter(k => ex.wan[k] && ex.wan[k]._viaFallback).length;
+            const avisoDesabilitados = (ex._legacyDisabledSites && ex._legacyDisabledSites.length)
+                ? `<br>⚠️ <strong>Atenção:</strong> ${ex._legacyDisabledSites.join(', ')} foram importados a partir de regras antigas (tls-host) que estavam <strong>DESABILITADAS</strong> no arquivo original. Ao gerar a nova configuração, esses bloqueios sairão <strong>ATIVOS</strong> — desmarque/remova o que não for intencional antes de gerar.`
+                : '';
+            status.innerHTML = `✅ Importação concluída. ${gruposImportados} grupo(s) reconhecido(s)${ex.redeToda ? ' + regra de Rede Toda' : ''}${ex.nomeBridge ? `. Bridge detectada: <code>${ex.nomeBridge}</code>` : ''}${viaFallback ? `. ${viaFallback} link(s) WAN identificado(s) por dedução (rótulo + distância da rota) — confira antes de gerar` : ''}. ${linhasOutras} linha(s) não reconhecida(s) foram para "Outras Configurações" — revise antes de exportar.${avisoDesabilitados}`;
+        }
+
+        // ============================================================
+        // VERIFICAÇÃO PRÉVIA (SANITY CHECK) ANTES DE GERAR
+        // ============================================================
+        function verificacaoPrevia() {
+            const avisos = [];
+            const grupos = coletarGrupos();
+
+            const nomes = grupos.map(g => g.key);
+            const nomesDuplicados = nomes.filter((n, i) => nomes.indexOf(n) !== i);
+            if (nomesDuplicados.length) {
+                avisos.push(`Dois ou mais grupos ficaram com o mesmo nome normalizado ("${nomesDuplicados[0]}") — as address-lists vão colidir no MikroTik.`);
+            }
+
+            grupos.forEach(g => {
+                if (existingListNames.includes(g.key) || existingListNames.some(n => n.toUpperCase() === g.key)) {
+                    avisos.push(`O grupo "${g.label}" usa um nome que já existe como address-list no arquivo importado — pode conflitar com regras existentes.`);
+                }
+                if (g.ips.length === 0 && (g.sites.length > 0 || g.quic || g.dot || g.doh || g.forcedns)) {
+                    avisos.push(`O grupo "${g.label}" tem proteções/sites marcados mas nenhum IP cadastrado ainda — a regra vai sair sem efeito até você adicionar IPs.`);
+                }
+                if ((g.qosUp && !g.qosDown) || (!g.qosUp && g.qosDown)) {
+                    avisos.push(`O grupo "${g.label}" tem só upload ou só download preenchido no QoS — confirme se é intencional.`);
+                }
+            });
+
+            const principalIf = getInterfaceValue('principal');
+            const backup1If = getInterfaceValue('backup1');
+            const backup2If = backup2Ativado ? getInterfaceValue('backup2') : '';
+            [['Principal', principalIf], ['Backup-1', backup1If], ['Backup-2', backup2If]].forEach(([nome, ifc], idx, arr) => {
+                if (!ifc) return;
+                arr.forEach(([outroNome, outroIf], j) => {
+                    if (j > idx && ifc === outroIf) avisos.push(`Interface "${ifc}" está selecionada tanto no link ${nome} quanto no ${outroNome}.`);
+                });
+            });
+
+            const nomeBridge = document.getElementById('nome_bridge').value.trim();
+            if (nomeBridge && existingListNames.includes(nomeBridge)) {
+                avisos.push(`O nome da bridge ("${nomeBridge}") coincide com uma address-list já existente no arquivo — confira se não é coincidência problemática.`);
+            }
+
+            return avisos;
+        }
+    </script>
+</body>
+</html>
