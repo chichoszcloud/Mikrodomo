@@ -3,6 +3,29 @@
 Todas as mudanças notáveis deste projeto são documentadas aqui.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
+## [1.0.1] - 2026-08-29
+
+### ⚠️ Correções de segurança / risco de perda de acesso
+
+Esta versão nasceu de uma comparação real entre um `.rsc` de produção e o resultado gerado pelo Mikrodomo a partir dele, que revelou riscos sérios de o equipamento ficar inacessível remotamente após aplicar a configuração gerada. Todos os pontos abaixo foram corrigidos.
+
+- **SSH era desabilitado automaticamente** (`set ssh disabled=yes`) mesmo quando o arquivo original tinha SSH funcional configurado — corrigido: o bloco `/ip service` deixou de ser gerado incondicionalmente.
+- **PPPoE duplicado**: ao reimportar um arquivo, o Mikrodomo criava uma nova interface PPPoE com nome diferente do original (`pppoe-VIVO` em vez de `pppoe-out2`, por exemplo), deixando duas sessões disputando a mesma credencial/porta — corrigido: o nome original agora é reaproveitado por padrão.
+- **Rota/netwatch quebrados**: quando o arquivo original usava `gateway=<nome-da-interface>` (mecanismo válido do RouterOS para PPPoE, sem IP fixo), o Mikrodomo tratava esse texto como se fosse um IP de monitoramento, gerando uma rota recursiva referenciando uma interface renomeada/inexistente — corrigido: detecta esse padrão e mantém o mecanismo original.
+- **Gateway de link estático vazio** quando detectado por dedução (ex: `add dst-address=X gateway= scope=10`) — corrigido: quando não há um "gateway real" separado do IP de monitoramento, gera a rota direta em vez de uma linha quebrada.
+- **Prefixo de rede da bridge fixo em `/23`**, ignorando o CIDR real informado ou importado (ex: gerava `/23` mesmo para uma rede `/24`) — corrigido.
+- **Identidade do sistema sem aspas** quando o nome tinha espaço (`set name=Fulano da Silva` em vez de `set name="Fulano da Silva"`) — corrigido.
+- **Perda silenciosa de dados reconhecidos no import**: comentários de porta física (ex: `ether1 = Port_dedicada_Link_Vivo`) e a definição do túnel `/interface sstp-client` (usado para gestão remota) eram identificados pelo parser mas nunca reproduzidos em lugar nenhum, nem em "Outras Configurações" — corrigido: agora são sempre preservados no export.
+
+### Adicionado
+
+- **Painel "Recomendações do Mikrodomo"**: dois pontos que antes eram aplicados automaticamente agora são opt-in via checkbox, desmarcados por padrão:
+  - Renomear interfaces PPPoE para o padrão do Mikrodomo (`pppoe-OPERADORA`) — desmarcado reaproveita o nome original.
+  - Aplicar hardening padrão de acesso (desabilitar FTP/Telnet/WWW/API, restringir Winbox à LAN) — desmarcado não gera nenhum bloco `/ip service`.
+- **Garantia explícita**: SSH, Winbox, usuários e grupos (`/user`, `/user group`) nunca são gerados ou alterados pela lógica do Mikrodomo, esteja o painel de recomendações marcado ou não — se existiam no arquivo original, permanecem exatamente como estavam, em "Outras Configurações".
+- Portas de bridge (LAN) detectadas no import agora populam automaticamente o campo "Interfaces LAN" e são recriadas na configuração gerada (antes eram descobertas mas nunca usadas).
+- Gateway real da LAN, quando detectado no `.rsc` importado, é usado em vez de recalculado (evita divergência se o gateway original não terminar em `.1`).
+
 ## [1.0.0] - 2026-08-27
 
 ### Adicionado

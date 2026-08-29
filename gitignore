@@ -1,0 +1,11 @@
+# Editores / SO
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Backups locais que não devem ir para o repositório
+*.rsc.bak
+*.rsc.local
+/testes-locais/
