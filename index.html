@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mikrodomo v1.0.1 - Gerador Failover + Bloqueio MikroTik</title>
+    <title>Mikrodomo v1.0.2 - Gerador Failover + Bloqueio MikroTik</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -619,7 +619,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="version-badge">v1.0.1</div>
+            <div class="version-badge">v1.0.2</div>
             <div class="logo-container">
                 <div class="logo logo-img">
                     <img src="https://alctechsolutions.netlify.app/logo4.png" alt="Mikrodomo"
@@ -645,6 +645,10 @@
         <div class="form-content">
             <!-- 
                 MIKRODOMO - CHANGELOG
+                v1.0.2 (2026-08-29)
+                - Corrigido: valor padrão do campo "Rede LAN" estava em /23 (resquício do
+                  protótipo inicial), inconsistente com o placeholder /24. Agora o padrão é /24.
+
                 v1.0.1 (2026-08-29)
                 - Painel "Recomendações do Mikrodomo": renomear interfaces PPPoE e hardening de
                   acesso (/ip service) agora são opt-in via checkbox, desmarcados por padrão
@@ -927,7 +931,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="rede_lan">Rede LAN:</label>
-                            <input type="text" id="rede_lan" placeholder="192.168.1.0/24" value="192.168.10.0/23" required>
+                            <input type="text" id="rede_lan" placeholder="192.168.1.0/24" value="192.168.10.0/24" required>
                             <div class="small-text">Gateway e range DHCP calculados automaticamente</div>
                         </div>
                         <div class="form-group">

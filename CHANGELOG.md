@@ -3,6 +3,11 @@
 Todas as mudanças notáveis deste projeto são documentadas aqui.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
+## [1.0.2] - 2026-08-29
+
+### Corrigido
+- Valor padrão do campo "Rede LAN" estava em `/23` (`192.168.10.0/23`), resquício do protótipo inicial da ferramenta e inconsistente com o placeholder de exemplo (`192.168.1.0/24`). Agora o valor padrão é `/24`.
+
 ## [1.0.1] - 2026-08-29
 
 ### ⚠️ Correções de segurança / risco de perda de acesso
