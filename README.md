@@ -36,11 +36,12 @@ Mikrodomo é um gerador de configuração MikroTik (`.rsc`) que roda 100% no nav
 
 ## 🎨 Build beta (identidade visual dark/tech)
 
-Existe uma versão **beta** com um tema visual escuro, alinhado com a identidade da [alctechsolutions.netlify.app](https://alctechsolutions.netlify.app/) — mesma lógica e funcionalidades do `index.html` estável, só muda o CSS. Ainda não foi promovida a estável; se você tiver o arquivo `index-v1.1.1-beta.html`, pode testar localmente (abrir direto no navegador) antes de decidir substituir o `index.html` principal.
+Existe uma versão **beta** com um tema visual escuro, alinhado com a identidade da [alctechsolutions.netlify.app](https://alctechsolutions.netlify.app/) — mesma lógica e funcionalidades , só muda o CSS, ainda não foi promovida a estável
 
 ## 🖥️ Rodando localmente / GitHub Pages
 
-Não há build step. Para servir via GitHub Pages, ative Pages apontando para a branch `main` (raiz) — o `index.html` já está pronto pra isso.
+Não há build step. 
+Site: https://chichoszcloud.github.io/Mikrodomo/
 
 ## 📄 Licença
 
