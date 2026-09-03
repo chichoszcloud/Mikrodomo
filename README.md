@@ -19,7 +19,7 @@ Mikrodomo é um gerador de configuração MikroTik (`.rsc`) que roda 100% no nav
 - **Failover multi-WAN** (até 3 links) com `check-gateway=ping`, suporte a PPPoE / DHCP / IP estático e VLAN.
 - **Filtros de bloqueio** por grupo nomeado (com lista de IPs própria) ou para a rede inteira: Meta, Spotify, YouTube, Netflix, TikTok, Twitter/X, Discord, Twitch, Steam, ou sites personalizados.
 - **Anti-bypass de DNS**: bloqueio de DoH (SNI + IPs de provedores conhecidos), DoT, QUIC, e opção de forçar todo mundo a usar o DNS do próprio roteador.
-- **QoS por grupo** (limite de upload/download via mangle + queue tree).
+- **QoS por grupo** (limite de upload/download via mangle + queue tree), com **burst calculado automaticamente** (2x de pico, liberado até 80% de uso sustentado, janela de 8s) — tanto no QoS geral quanto no QoS por grupo.
 - **Importação de `.rsc` existente**: detecta e pré-preenche links WAN (inclusive por dedução, quando o arquivo não segue um padrão de nomenclatura específico), bridge LAN já existente, portas da bridge, DDNS (MikroTik Cloud), grupos de bloqueio já configurados (inclusive no formato legado baseado em `tls-host`), e evita duplicar address-lists que já existem no arquivo.
 - **Verificação prévia** antes de gerar: avisa sobre nomes de grupo duplicados, colisão com listas já existentes, grupos sem IP cadastrado, interfaces reaproveitadas em dois links, entre outros.
 - Tudo que não é reconhecido no `.rsc` importado vai para uma caixa de **"Outras Configurações"**, editável, e é preservado ao exportar de novo — nada se perde.
@@ -32,6 +32,10 @@ Mikrodomo é um gerador de configuração MikroTik (`.rsc`) que roda 100% no nav
 4. Revise o painel "Recomendações do Mikrodomo" — marque apenas o que você realmente quer que a ferramenta aplique.
 5. Clique em **Gerar Configuração MikroTik**, revise os avisos da verificação prévia (se houver), e copie/baixe o `.rsc` gerado.
 6. Aplique no MikroTik com cautela — sempre faça backup antes (`/export` e `/system backup save`), e revise o `.rsc` gerado antes de colar num equipamento em produção.
+
+## 🎨 Build beta (identidade visual dark/tech)
+
+Existe uma versão **beta** com um tema visual escuro, alinhado com a identidade da [alctechsolutions.netlify.app](https://alctechsolutions.netlify.app/) — mesma lógica e funcionalidades do `index.html` estável, só muda o CSS. Ainda não foi promovida a estável; se você tiver o arquivo `index-v1.1.1-beta.html`, pode testar localmente (abrir direto no navegador) antes de decidir substituir o `index.html` principal.
 
 ## 🖥️ Rodando localmente / GitHub Pages
 
