@@ -3,6 +3,16 @@
 Todas as mudanças notáveis deste projeto são documentadas aqui.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
+## [1.0.3] - 2026-09-02
+
+### Adicionado
+- QoS: `burst-limit`/`burst-threshold`/`burst-time` agora são calculados automaticamente (2x de pico, 80% de threshold, janela de 8s), tanto no QoS geral (PCQ, para a rede toda) quanto no QoS por grupo (queue tree).
+
+### Corrigido
+- O bloco de QoS geral (PCQ) usava `pcq-burst-rate` no lugar de `pcq-rate` como parâmetro de limite base, o que não implementava de fato um limite de banda — corrigido, e agora tem burst próprio configurado corretamente também.
+
+> Nota: existe também uma build **beta** com nova identidade visual (dark/tech), disponível separadamente como `index-v1.1.1-beta.html` — ainda não promovida a estável.
+
 ## [1.0.2] - 2026-08-29
 
 ### Corrigido

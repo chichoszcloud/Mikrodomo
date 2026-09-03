@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mikrodomo v1.0.2 - Gerador Failover + Bloqueio MikroTik</title>
+    <title>Mikrodomo v1.0.3 - Gerador Failover + Bloqueio MikroTik</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -619,7 +619,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="version-badge">v1.0.2</div>
+            <div class="version-badge">v1.0.3</div>
             <div class="logo-container">
                 <div class="logo logo-img">
                     <img src="https://alctechsolutions.netlify.app/logo4.png" alt="Mikrodomo"
@@ -645,6 +645,14 @@
         <div class="form-content">
             <!-- 
                 MIKRODOMO - CHANGELOG
+                v1.0.3 (2026-09-02)
+                - QoS: burst-limit/burst-threshold/burst-time agora são calculados
+                  automaticamente (2x de pico, 80% de threshold, janela de 8s), tanto no
+                  QoS geral (PCQ) quanto no QoS por grupo (queue tree) - antes só havia
+                  limite fixo, sem burst.
+                - Corrigido: bloco de QoS geral (PCQ) usava "pcq-burst-rate" no lugar de
+                  "pcq-rate" como limite base, o que não implementava um limite real.
+
                 v1.0.2 (2026-08-29)
                 - Corrigido: valor padrão do campo "Rede LAN" estava em /23 (resquício do
                   protótipo inicial), inconsistente com o placeholder /24. Agora o padrão é /24.
@@ -985,7 +993,7 @@
                         <div class="form-group">
                             <label for="velocidade">Velocidade (Mbps):</label>
                             <input type="number" id="velocidade" placeholder="100" value="20">
-                            <div class="small-text">Aplicado tanto para upload quanto download</div>
+                            <div class="small-text">Aplicado tanto para upload quanto download. Burst calculado automaticamente (2x de pico por 8s, liberado acima de 80% de uso sustentado).</div>
                         </div>
                     </div>
                 </div>
@@ -1029,6 +1037,7 @@
                                 <input type="number" id="qos_down_rede_toda" placeholder="Ex: 10" min="0">
                             </div>
                         </div>
+                        <div class="small-text">Burst calculado automaticamente (2x de pico por 8s, liberado acima de 80% de uso sustentado).</div>
                     </div>
 
                     <div id="grupos_container"></div>
@@ -1206,6 +1215,7 @@
                         <input type="number" id="qos_down_${id}" placeholder="Ex: 10" min="0">
                     </div>
                 </div>
+                <div class="small-text">Burst calculado automaticamente (2x de pico por 8s, liberado acima de 80% de uso sustentado).</div>
             `;
             document.getElementById('grupos_container').appendChild(div);
             populateSiteSelect(id);
@@ -1410,12 +1420,14 @@ add action=mark-packet chain=forward${dstClause} new-packet-mark=qos_${t.key}_do
                     cfg += `
 /queue tree`;
                     if (t.qosUp) {
+                        const burstUp = calcularBurst(t.qosUp);
                         cfg += `
-add name=QoS_${t.key}_UP parent=global-out packet-mark=qos_${t.key}_up max-limit=${t.qosUp}M comment="QoS upload - ${t.label}"`;
+add name=QoS_${t.key}_UP parent=global-out packet-mark=qos_${t.key}_up max-limit=${t.qosUp}M burst-limit=${burstUp.limit}M burst-threshold=${burstUp.threshold}M burst-time=${burstUp.time} comment="QoS upload - ${t.label}"`;
                     }
                     if (t.qosDown) {
+                        const burstDown = calcularBurst(t.qosDown);
                         cfg += `
-add name=QoS_${t.key}_DOWN parent=global-in packet-mark=qos_${t.key}_down max-limit=${t.qosDown}M comment="QoS download - ${t.label}"`;
+add name=QoS_${t.key}_DOWN parent=global-in packet-mark=qos_${t.key}_down max-limit=${t.qosDown}M burst-limit=${burstDown.limit}M burst-threshold=${burstDown.threshold}M burst-time=${burstDown.time} comment="QoS download - ${t.label}"`;
                     }
                 }
             });
@@ -1590,10 +1602,11 @@ add name=dhcp_pool0 ranges=${rangeDhcp}`;
             }
             
             if (habilitarQos) {
+                const burstGeral = calcularBurst(velocidade);
                 config += `
 /queue type
-add kind=pcq name=${velocidade}mb-download pcq-burst-rate=${velocidade}M pcq-classifier=dst-address pcq-total-limit=20000KiB
-add kind=pcq name=${velocidade}mb-upload pcq-burst-rate=${velocidade}M pcq-classifier=src-address pcq-total-limit=20000KiB
+add kind=pcq name=${velocidade}mb-download pcq-rate=${velocidade}M pcq-classifier=dst-address pcq-total-limit=20000KiB pcq-burst-rate=${burstGeral.limit}M pcq-burst-threshold=${burstGeral.threshold}M pcq-burst-time=${burstGeral.time}
+add kind=pcq name=${velocidade}mb-upload pcq-rate=${velocidade}M pcq-classifier=src-address pcq-total-limit=20000KiB pcq-burst-rate=${burstGeral.limit}M pcq-burst-threshold=${burstGeral.threshold}M pcq-burst-time=${burstGeral.time}
 /queue simple
 add name=${nomeBridge} queue=${velocidade}mb-upload/${velocidade}mb-download target=${redeLan},${nomeBridge}`;
             }
@@ -1748,6 +1761,21 @@ add down-script=":log error \\"LINK ${e.nome} DOWN!\\"" host=${e.link.ipMonitor}
         function isValidIPv4(str) {
             if (!str) return false;
             return /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(str.trim());
+        }
+
+        // Calcula burst-limit/burst-threshold/burst-time a partir do limite nominal (Mbps),
+        // seguindo a fórmula padrão recomendada pela documentação da MikroTik:
+        // burst-limit = 2x o limite nominal, burst-threshold = 80% do limite nominal,
+        // burst-time = janela curta (8s) para o burst não virar um limite "de fato" permanente.
+        function calcularBurst(mbpsStr) {
+            const mbps = parseFloat(mbpsStr);
+            if (!mbps || mbps <= 0) return null;
+            const arredonda = (n) => Math.round(n * 10) / 10;
+            return {
+                limit: arredonda(mbps * 2),
+                threshold: arredonda(mbps * 0.8),
+                time: '8s'
+            };
         }
 
         function nomeInterfacePppoe(dados, sufixo) {
