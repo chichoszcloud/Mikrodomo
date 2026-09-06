@@ -1,0 +1,11 @@
+--2026-09-03 09:34:19--  https://release-assets.githubusercontent.com/github-production-release-asset/1158138526/1efabd47-58c0-4724-bdcf-af72d0cff38a?sp=r
+Resolvendo release-assets.githubusercontent.com (release-assets.githubusercontent.com)... 185.199.109.133, 185.199.110.133, 185.199.111.133, ...
+Conectando-se a release-assets.githubusercontent.com (release-assets.githubusercontent.com)|185.199.109.133|:443... conectado.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 4315475 (4,1M) [application/octet-stream]
+Salvando em: “1efabd47-58c0-4724-bdcf-af72d0cff38a?sp=r”
+
+            1efabd47-58c   0%[                                   ]       0  --.-KB/s                          1efabd47-58c0  68%[======================>            ]   2,81M  14,1MB/s               1efabd47-58c0-4724-bdcf- 100%[==================================>]   4,12M  19,1MB/s    em 0,2s    
+
+2026-09-03 09:34:19 (19,1 MB/s) - “1efabd47-58c0-4724-bdcf-af72d0cff38a?sp=r” salvo [4315475/4315475]
+

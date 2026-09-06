@@ -3,6 +3,19 @@
 Todas as mudanças notáveis deste projeto são documentadas aqui.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
+## [1.0.4] - 2026-09-04
+
+### 🎨 Identidade visual
+- **Tema Dark/Tech promovido a estável**, substituindo o tema claro. Fundo escuro com grid e glows teal/azul, cartões em vidro fosco, ícones em gradiente teal/ciano e azul-escuro/azul-claro — alinhado com [alctechsolutions.netlify.app](https://alctechsolutions.netlify.app/). A versão anterior (tema claro) fica preservada no histórico do repositório, não é mais o padrão.
+
+### ✨ Adicionado
+- **Preservação do range original do DHCP Pool** ao importar um `.rsc` — antes o Mikrodomo sempre recalculava um range genérico, ignorando um range customizado já em uso (ex: `172.16.35.2-172.16.35.254`).
+- **Burst também no `/queue simple`** do QoS geral — antes só o `/queue type` (PCQ) tinha burst calculado; agora a linha do `queue simple` também recebe `burst-limit`/`burst-threshold`/`burst-time`.
+- **Backup-1 deixou de ser obrigatório.** Só o Link Principal é exigido para gerar a configuração — Backup-1 e Backup-2 agora funcionam da mesma forma (opcionais, adicione se/quando precisar).
+- **Regras de bloqueio desabilitadas no arquivo original agora aparecem, mas inativas.** Antes, um site bloqueado com `disabled=yes` era descartado (ia para "Outras Configurações", perdendo visibilidade). Agora ele aparece como um chip **inativo** (○) no grupo/rede toda correspondente — o usuário vê que a regra existe e pode reativá-la com um clique (fica ● quando ativa). Regras inativas não entram na configuração gerada.
+- **Sugestão inteligente de IP de Monitoramento**: campo deixou de ser obrigatório; quando vazio, mostra sugestões (1.1.1.1, 8.8.8.8, IPs de root servers) via tooltip. Para DHCP sem IP informado, usa `8.8.8.8` como padrão automaticamente.
+- **Tooltips (balões de ajuda)** em praticamente todos os campos do formulário — identificação, DDNS, bridge, rede LAN, interfaces, links WAN, grupos de bloqueio, proteções (QUIC/DoT/DoH/Forçar DNS) e QoS — com explicação curta e recomendação de uso.
+
 ## [1.0.3] - 2026-09-02
 
 ### Adicionado

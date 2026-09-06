@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mikrodomo v1.0.3 - Gerador Failover + Bloqueio MikroTik</title>
+    <title>Mikrodomo v1.0.4 - Gerador Failover + Bloqueio MikroTik</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -15,13 +15,14 @@
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #3b82f6 100%);
+            background: linear-gradient(160deg, #060b14 0%, #0a1220 45%, #0d1b2a 100%);
             min-height: 100vh;
             padding: 20px 10px;
             position: relative;
             overflow-x: hidden;
         }
-        
+
+        /* Fundo estilo "rede/tecnologia": grid sutil + glows teal/azul, como na alctechsolutions.netlify.app */
         body::before {
             content: '';
             position: fixed;
@@ -29,10 +30,25 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(147, 197, 253, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(30, 58, 138, 0.1) 0%, transparent 50%);
+            background:
+                linear-gradient(rgba(45, 212, 191, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(45, 212, 191, 0.05) 1px, transparent 1px);
+            background-size: 42px 42px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(45, 212, 191, 0.16) 0%, transparent 45%),
+                radial-gradient(circle at 85% 10%, rgba(37, 99, 235, 0.16) 0%, transparent 45%),
+                radial-gradient(circle at 50% 90%, rgba(6, 182, 212, 0.12) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
@@ -45,14 +61,14 @@
         }
         
         .header {
-            background: rgba(255, 255, 255, 0.95);
+            background: linear-gradient(160deg, rgba(19, 28, 46, 0.92) 0%, rgba(13, 20, 33, 0.92) 100%);
             backdrop-filter: blur(20px);
             border-radius: 16px 16px 0 0;
             padding: 24px;
             text-align: center;
             position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(45, 212, 191, 0.22);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 40px rgba(45, 212, 191, 0.06);
         }
         
         .logo-container {
@@ -66,12 +82,12 @@
         .logo {
             width: 48px;
             height: 48px;
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            background: linear-gradient(135deg, #2dd4bf, #0e7490);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 16px rgba(45, 212, 191, 0.35);
         }
         
         .logo svg {
@@ -89,13 +105,13 @@
         .brand-name {
             font-size: 18px;
             font-weight: 700;
-            color: #1e40af;
+            color: #f1f5f9;
             letter-spacing: -0.02em;
         }
         
         .brand-link {
             font-size: 11px;
-            color: #3b82f6;
+            color: #2dd4bf;
             font-weight: 500;
             text-decoration: none;
             margin-top: 2px;
@@ -103,13 +119,13 @@
         }
         
         .brand-link:hover {
-            color: #1e40af;
+            color: #5eead4;
             text-decoration: underline;
         }
         
         .brand-subtitle {
             font-size: 11px;
-            color: #64748b;
+            color: #7dd3c8;
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.1em;
@@ -119,14 +135,14 @@
         .header h1 {
             font-size: 22px;
             font-weight: 600;
-            color: #1e293b;
+            color: #f1f5f9;
             margin-bottom: 6px;
             letter-spacing: -0.02em;
         }
         
         .header .subtitle {
             font-size: 13px;
-            color: #64748b;
+            color: #94a3b8;
             font-weight: 400;
         }
 
@@ -134,13 +150,14 @@
             position: absolute;
             top: 16px;
             right: 16px;
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            background: linear-gradient(135deg, #2dd4bf, #0e7490);
             color: white;
             font-size: 11px;
             font-weight: 700;
             padding: 4px 10px;
             border-radius: 999px;
             letter-spacing: 0.03em;
+            box-shadow: 0 2px 10px rgba(45, 212, 191, 0.3);
         }
 
         .logo-img img {
@@ -148,17 +165,18 @@
             height: 48px;
             border-radius: 12px;
             object-fit: contain;
-            background: white;
+            background: #0d1420;
+            border: 1px solid rgba(45, 212, 191, 0.25);
         }
 
         .footer-credit {
             margin-top: 14px;
             font-size: 11px;
-            color: #94a3b8;
+            color: #64748b;
         }
 
         .footer-credit a {
-            color: #3b82f6;
+            color: #2dd4bf;
             text-decoration: none;
             font-weight: 500;
         }
@@ -168,10 +186,10 @@
         }
 
         .warning-banner {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border: 1px solid #f59e0b;
-            border-left: 4px solid #d97706;
-            color: #78350f;
+            background: linear-gradient(135deg, rgba(217, 119, 6, 0.16) 0%, rgba(180, 83, 9, 0.10) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-left: 4px solid #f59e0b;
+            color: #fcd34d;
             font-size: 12px;
             font-weight: 500;
             line-height: 1.5;
@@ -180,10 +198,10 @@
         }
 
         .warning-inline {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-left: 3px solid #dc2626;
-            color: #991b1b;
+            background: rgba(220, 38, 38, 0.12);
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            border-left: 3px solid #ef4444;
+            color: #fca5a5;
             font-size: 11px;
             padding: 8px 10px;
             border-radius: 6px;
@@ -191,18 +209,18 @@
         }
         
         .form-content {
-            background: rgba(255, 255, 255, 0.95);
+            background: linear-gradient(160deg, rgba(19, 28, 46, 0.92) 0%, rgba(13, 20, 33, 0.92) 100%);
             backdrop-filter: blur(20px);
             border-radius: 0 0 16px 16px;
             padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(45, 212, 191, 0.22);
             border-top: none;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 40px rgba(45, 212, 191, 0.06);
         }
         
         .section {
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            border: 1px solid #e2e8f0;
+            background: linear-gradient(160deg, rgba(30, 41, 59, 0.55) 0%, rgba(15, 23, 42, 0.55) 100%);
+            border: 1px solid rgba(148, 163, 184, 0.15);
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 16px;
@@ -211,13 +229,13 @@
         }
         
         .section:hover {
-            border-color: #3b82f6;
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+            border-color: rgba(45, 212, 191, 0.45);
+            box-shadow: 0 4px 20px rgba(45, 212, 191, 0.1);
             transform: translateY(-1px);
         }
         
         .section h3 {
-            color: #1e293b;
+            color: #e2e8f0;
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 12px;
@@ -230,7 +248,7 @@
         .section-icon {
             width: 20px;
             height: 20px;
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            background: linear-gradient(135deg, #2dd4bf, #0e7490);
             border-radius: 6px;
             display: flex;
             align-items: center;
@@ -259,38 +277,43 @@
             margin-bottom: 6px;
             font-size: 12px;
             font-weight: 500;
-            color: #374151;
+            color: #cbd5e1;
             letter-spacing: -0.01em;
         }
         
         input, select, textarea {
             width: 100%;
             padding: 10px 12px;
-            border: 1.5px solid #e5e7eb;
+            border: 1.5px solid rgba(148, 163, 184, 0.25);
             border-radius: 8px;
             font-size: 13px;
             font-family: inherit;
             transition: all 0.2s ease;
-            background: white;
-            color: #374151;
+            background: rgba(10, 16, 28, 0.65);
+            color: #e2e8f0;
         }
         
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #2dd4bf;
+            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
             transform: translateY(-1px);
         }
         
         input::placeholder {
-            color: #9ca3af;
+            color: #64748b;
+        }
+
+        select option {
+            background: #101826;
+            color: #e2e8f0;
         }
         
         .conditional-fields {
             margin-top: 12px;
             padding: 12px;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(147, 197, 253, 0.05));
-            border: 1px solid rgba(59, 130, 246, 0.1);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.10), rgba(45, 212, 191, 0.06));
+            border: 1px solid rgba(59, 130, 246, 0.22);
             border-radius: 8px;
             position: relative;
         }
@@ -302,14 +325,14 @@
             top: 0;
             bottom: 0;
             width: 3px;
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            background: linear-gradient(135deg, #3b82f6, #1e3a8a);
             border-radius: 0 3px 3px 0;
         }
         
         .conditional-fields h4 {
             font-size: 12px;
             font-weight: 600;
-            color: #1e40af;
+            color: #93c5fd;
             margin-bottom: 10px;
         }
         
@@ -323,13 +346,14 @@
         .checkbox-group input[type="checkbox"] {
             width: 16px;
             height: 16px;
-            accent-color: #3b82f6;
+            accent-color: #2dd4bf;
         }
         
         .checkbox-group label {
             margin-bottom: 0;
             font-size: 13px;
             cursor: pointer;
+            color: #cbd5e1;
         }
         
         .btn {
@@ -354,19 +378,20 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            background: linear-gradient(135deg, #2dd4bf, #0e7490);
             color: white;
             padding: 12px 20px;
             font-size: 13px;
-            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 16px rgba(45, 212, 191, 0.3);
         }
         
         .btn-secondary {
-            background: linear-gradient(135deg, #64748b, #475569);
-            color: white;
+            background: linear-gradient(135deg, #334155, #1e293b);
+            color: #e2e8f0;
             padding: 12px 16px;
             font-size: 12px;
-            box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(148, 163, 184, 0.2);
         }
         
         .btn-success {
@@ -378,11 +403,11 @@
         }
         
         .btn-info {
-            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            background: linear-gradient(135deg, #3b82f6, #1e3a8a);
             color: white;
             padding: 12px 16px;
             font-size: 12px;
-            box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
         }
         
         .btn:disabled {
@@ -400,25 +425,26 @@
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 8px 25px rgba(45, 212, 191, 0.4);
         }
         
         .btn-secondary {
-            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-            color: #475569;
+            background: linear-gradient(135deg, rgba(51, 65, 85, 0.7), rgba(30, 41, 59, 0.7));
+            color: #cbd5e1;
             padding: 8px 12px;
             font-size: 11px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.2);
             margin-top: 8px;
         }
         
         .btn-secondary:hover {
-            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            background: linear-gradient(135deg, rgba(71, 85, 105, 0.8), rgba(51, 65, 85, 0.8));
+            border-color: rgba(45, 212, 191, 0.35);
             transform: translateY(-1px);
         }
         
         .btn-danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
             color: white;
             padding: 4px 8px;
             font-size: 10px;
@@ -427,11 +453,11 @@
         
         .result {
             margin-top: 20px;
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(6, 10, 18, 0.95);
             backdrop-filter: blur(20px);
             border-radius: 12px;
             padding: 20px;
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(45, 212, 191, 0.25);
             display: none;
         }
         
@@ -448,9 +474,9 @@
         .result textarea {
             width: 100%;
             height: 320px;
-            background: #0f172a;
-            color: #e2e8f0;
-            border: 1px solid #334155;
+            background: #060a12;
+            color: #d1fae5;
+            border: 1px solid rgba(45, 212, 191, 0.2);
             border-radius: 8px;
             padding: 16px;
             font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
@@ -460,8 +486,8 @@
         }
         
         .result textarea:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #2dd4bf;
+            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
         }
         
         .copy-btn {
@@ -483,19 +509,19 @@
         
         .small-text {
             font-size: 10px;
-            color: #6b7280;
+            color: #7c8aa0;
             margin-top: 4px;
             line-height: 1.4;
         }
         
         .info-box {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(147, 197, 253, 0.05));
-            border: 1px solid rgba(59, 130, 246, 0.1);
+            background: linear-gradient(135deg, rgba(45, 212, 191, 0.08), rgba(59, 130, 246, 0.06));
+            border: 1px solid rgba(45, 212, 191, 0.2);
             border-radius: 6px;
             padding: 8px;
             margin-top: 6px;
             font-size: 10px;
-            color: #1e40af;
+            color: #7dd3c8;
             line-height: 1.4;
         }
         
@@ -552,7 +578,7 @@
 
         /* Estilos para interfaces manuais */
         .error-text {
-            color: #dc2626;
+            color: #f87171;
             font-size: 11px;
             margin-top: 4px;
         }
@@ -569,12 +595,19 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            background: linear-gradient(135deg, #2dd4bf, #0e7490);
             color: white;
             padding: 5px 10px;
             border-radius: 999px;
             font-size: 11px;
             font-weight: 500;
+            transition: opacity 0.2s ease, filter 0.2s ease;
+        }
+
+        .chip.chip-inactive {
+            background: rgba(100, 116, 139, 0.35);
+            color: #94a3b8;
+            opacity: 0.75;
         }
 
         .chip button {
@@ -597,8 +630,8 @@
         }
 
         .grupo-block {
-            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
-            border: 1px solid #fed7aa;
+            background: linear-gradient(160deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%);
+            border: 1px solid rgba(251, 146, 60, 0.3);
             border-radius: 12px;
             padding: 14px;
             margin-bottom: 14px;
@@ -608,7 +641,33 @@
         .grupo-block h4 {
             font-size: 13px;
             font-weight: 600;
-            color: #9a3412;
+            color: #fdba74;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chip button:hover {
+            background: rgba(255,255,255,0.45);
+        }
+
+        .grupo-block {
+            background: linear-gradient(160deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%);
+            border: 1px solid rgba(251, 146, 60, 0.3);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 14px;
+            position: relative;
+        }
+
+        .grupo-block h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fdba74;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
@@ -619,7 +678,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="version-badge">v1.0.3</div>
+            <div class="version-badge">v1.0.4</div>
             <div class="logo-container">
                 <div class="logo logo-img">
                     <img src="https://alctechsolutions.netlify.app/logo4.png" alt="Mikrodomo"
@@ -645,13 +704,17 @@
         <div class="form-content">
             <!-- 
                 MIKRODOMO - CHANGELOG
-                v1.0.3 (2026-09-02)
-                - QoS: burst-limit/burst-threshold/burst-time agora são calculados
-                  automaticamente (2x de pico, 80% de threshold, janela de 8s), tanto no
-                  QoS geral (PCQ) quanto no QoS por grupo (queue tree) - antes só havia
-                  limite fixo, sem burst.
-                - Corrigido: bloco de QoS geral (PCQ) usava "pcq-burst-rate" no lugar de
-                  "pcq-rate" como limite base, o que não implementava um limite real.
+                v1.0.4 (2026-09-02)
+                - QoS: burst-limit/burst-threshold/burst-time calculados automaticamente
+                  (2x de pico, 80% threshold, 8s), no QoS geral e por grupo. Corrigido também
+                  "pcq-burst-rate" usado incorretamente como limite base no QoS geral (PCQ).
+
+                v1.1.0-beta (2026-08-29)
+                - BETA VISUAL: nova identidade visual dark/tech, alinhada com
+                  alctechsolutions.netlify.app - fundo escuro com grid e glows teal/azul,
+                  cartões cinza-escuro com borda clara sutil (estilo "vidro"), ícones em
+                  gradiente teal/ciano e azul-escuro/azul-claro. Nenhuma mudança de lógica -
+                  apenas CSS. Testar antes de substituir a versão estável em produção.
 
                 v1.0.2 (2026-08-29)
                 - Corrigido: valor padrão do campo "Rede LAN" estava em /23 (resquício do
@@ -706,11 +769,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="identificacao">Nome do Sistema/Cliente:</label>
-                            <input type="text" id="identificacao" placeholder="Ex: EMPRESA-MATRIZ" required>
+                            <input type="text" id="identificacao" placeholder="Ex: EMPRESA-MATRIZ" required title="Nome do sistema/cliente (vira /system identity no MikroTik). Aparece no Winbox e no terminal - use algo que identifique o equipamento no seu inventário.">
                         </div>
                         <div class="form-group">
                             <label for="ddns_nome">DDNS MikroTik Cloud (opcional):</label>
-                            <input type="text" id="ddns_nome" placeholder="Ex: d4440cc1fac9.sn.mynetname.net">
+                            <input type="text" id="ddns_nome" placeholder="Ex: d4440cc1fac9.sn.mynetname.net" title="Preencha só se você já sabe o hostname do MikroTik Cloud (DDNS). Se detectado num .rsc importado, é preenchido automaticamente. O nome real é atribuído pela MikroTik, não é algo que você inventa.">
                             <div class="small-text" id="ddns_hint">Se detectado no .rsc importado, o nome real (atribuído dinamicamente pela MikroTik Cloud) não fica salvo no arquivo — confirme com <code>/ip cloud print</code> no equipamento.</div>
                         </div>
                     </div>
@@ -722,13 +785,13 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="interface_principal">Interface:</label>
-                            <select id="interface_principal" onchange="toggleCustomInterface('principal')" required></select>
+                            <select id="interface_principal" onchange="toggleCustomInterface('principal')" required title="Interface física ou dialer usada pelo link principal (o que carrega a internet na maior parte do tempo)."></select>
                             <input type="text" id="interface_principal_custom" class="hidden" placeholder="Digite a interface manualmente" style="margin-top:6px;">
                             <div class="small-text">Lista populada automaticamente ao importar um .rsc. Sem importação, escolha "Outro" para digitar.</div>
                         </div>
                         <div class="form-group">
                             <label for="tipo_principal">Tipo de Conexão:</label>
-                            <select id="tipo_principal" required>
+                            <select id="tipo_principal" required title="PPPoE: provedor autentica com usuário/senha. DHCP: o provedor entrega IP automaticamente. IP Fixo: você configura o IP/gateway manualmente.">
                                 <option value="">Selecione...</option>
                                 <option value="pppoe">PPPoE</option>
                                 <option value="dhcp">DHCP Client</option>
@@ -740,18 +803,18 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="vlan_principal">VLAN ID (opcional):</label>
-                            <input type="number" id="vlan_principal" placeholder="100">
+                            <input type="number" id="vlan_principal" placeholder="100" title="Preencha só se este link estiver atrás de uma VLAN (ex: fibra com tag de operadora). A maioria dos links não usa.">
                         </div>
                         <div class="form-group">
-                            <label for="ip_monitor_principal">IP Monitoramento:</label>
-                            <input type="text" id="ip_monitor_principal" placeholder="1.1.1.1" required>
+                            <label for="ip_monitor_principal">IP Monitoramento (opcional):</label>
+                            <input type="text" id="ip_monitor_principal" placeholder="1.1.1.1 ou 8.8.8.8" title="IP estável e sempre-online usado pelo check-gateway para saber se o link caiu. Sugestões: 1.1.1.1 (Cloudflare), 8.8.8.8 (Google), 198.41.0.4 (root server a.root-servers.net). Deixe vazio para PPPoE usar o mecanismo simples (gateway pelo nome da interface) ou para DHCP usar 8.8.8.8 como padrão.">
                         </div>
                     </div>
                     
                     <div class="form-row single">
                         <div class="form-group">
                             <label for="operadora_principal">Operadora:</label>
-                            <input type="text" id="operadora_principal" placeholder="VIVO, NET, TIM..." required>
+                            <input type="text" id="operadora_principal" placeholder="VIVO, NET, TIM..." required title="Nome livre usado nos comentários gerados (ex: ETHER2-VIVO-PRINCIPAL-PPPOE) e no nome do dialer PPPoE, se não reaproveitar o original.">
                         </div>
                     </div>
                     
@@ -788,17 +851,18 @@
                 
                 <!-- Link Backup-1 -->
                 <div class="section">
-                    <h3><div class="section-icon">🔄</div> Link Backup-1</h3>
+                    <h3><div class="section-icon">🔄</div> Link Backup-1 <span style="font-weight:400; font-size:11px; color:#7dd3c8;">(opcional)</span></h3>
+                    <div class="small-text" style="margin-bottom:10px;">Só o Link Principal é obrigatório. Deixe a interface em branco se não tiver um segundo link agora — pode preencher depois.</div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="interface_backup1">Interface:</label>
-                            <select id="interface_backup1" onchange="toggleCustomInterface('backup1')" required></select>
+                            <select id="interface_backup1" onchange="toggleCustomInterface('backup1')" title="Interface física ou dialer usada por este link. Deixe em 'Selecione...' se ainda não tiver um Backup-1."></select>
                             <input type="text" id="interface_backup1_custom" class="hidden" placeholder="Digite a interface manualmente" style="margin-top:6px;">
                             <div class="small-text">Lista populada automaticamente ao importar um .rsc.</div>
                         </div>
                         <div class="form-group">
                             <label for="tipo_backup1">Tipo de Conexão:</label>
-                            <select id="tipo_backup1" required>
+                            <select id="tipo_backup1" title="PPPoE: provedor autentica com usuário/senha. DHCP: o provedor entrega IP automaticamente. IP Fixo: você configura o IP/gateway manualmente.">
                                 <option value="">Selecione...</option>
                                 <option value="pppoe">PPPoE</option>
                                 <option value="dhcp">DHCP Client</option>
@@ -810,18 +874,18 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="vlan_backup1">VLAN ID (opcional):</label>
-                            <input type="number" id="vlan_backup1" placeholder="200">
+                            <input type="number" id="vlan_backup1" placeholder="200" title="Preencha só se este link estiver atrás de uma VLAN (ex: fibra com tag de operadora). A maioria dos links não usa.">
                         </div>
                         <div class="form-group">
-                            <label for="ip_monitor_backup1">IP Monitoramento:</label>
-                            <input type="text" id="ip_monitor_backup1" placeholder="8.8.8.8" required>
+                            <label for="ip_monitor_backup1">IP Monitoramento (opcional):</label>
+                            <input type="text" id="ip_monitor_backup1" placeholder="1.1.1.1 ou 8.8.8.8" title="IP estável e sempre-online usado pelo check-gateway para saber se o link caiu. Sugestões: 1.1.1.1 (Cloudflare), 8.8.8.8 (Google), 198.41.0.4 (root server a.root-servers.net). Deixe vazio para PPPoE usar o mecanismo simples (gateway pelo nome da interface).">
                         </div>
                     </div>
                     
                     <div class="form-row single">
                         <div class="form-group">
                             <label for="operadora_backup1">Operadora:</label>
-                            <input type="text" id="operadora_backup1" placeholder="CLARO, OI, LOCAL..." required>
+                            <input type="text" id="operadora_backup1" placeholder="CLARO, OI, LOCAL..." title="Nome livre usado nos comentários gerados (ex: ETHER3-CLARO-BACKUP-1-PPPOE) e no nome do dialer PPPoE, se não reaproveitar o original.">
                         </div>
                     </div>
                     
@@ -890,8 +954,8 @@
                             <input type="number" id="vlan_backup2" placeholder="300">
                         </div>
                         <div class="form-group">
-                            <label for="ip_monitor_backup2">IP Monitoramento:</label>
-                            <input type="text" id="ip_monitor_backup2" placeholder="1.0.0.1">
+                            <label for="ip_monitor_backup2">IP Monitoramento (opcional):</label>
+                            <input type="text" id="ip_monitor_backup2" placeholder="1.0.0.1 ou 8.8.4.4" title="IP estável e sempre-online usado pelo check-gateway para saber se o link caiu. Sugestões: 1.0.0.1 (Cloudflare), 8.8.4.4 (Google), 199.7.83.42 (root server j.root-servers.net). Deixe vazio para PPPoE usar o mecanismo simples (gateway pelo nome da interface).">
                         </div>
                     </div>
                     
@@ -939,12 +1003,12 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="rede_lan">Rede LAN:</label>
-                            <input type="text" id="rede_lan" placeholder="192.168.1.0/24" value="192.168.10.0/24" required>
+                            <input type="text" id="rede_lan" placeholder="192.168.1.0/24" value="192.168.10.0/24" required title="Rede interna (LAN) em notação CIDR. O gateway (.1) e o range de DHCP são calculados a partir disso, a menos que você importe um .rsc com valores diferentes já configurados.">
                             <div class="small-text">Gateway e range DHCP calculados automaticamente</div>
                         </div>
                         <div class="form-group">
                             <label for="nome_bridge">Nome da Bridge LAN:</label>
-                            <input type="text" id="nome_bridge" placeholder="LAN" value="LAN" required>
+                            <input type="text" id="nome_bridge" placeholder="LAN" value="LAN" required title="Nome da bridge que agrupa as portas da LAN. Se você importar um .rsc com uma bridge já existente (ex: Br_Rede), o nome é detectado e preenchido aqui automaticamente - evita criar uma bridge duplicada.">
                             <div class="small-text" id="bridge_hint">Se importar um .rsc com uma bridge já existente (ex: Br_Rede), o nome é preenchido aqui automaticamente — evita criar uma bridge duplicada.</div>
                         </div>
                     </div>
@@ -952,7 +1016,7 @@
                     <div class="form-row single">
                         <div class="form-group">
                             <label for="interfaces_lan">Interfaces LAN (opcional):</label>
-                            <input type="text" id="interfaces_lan" placeholder="ether4 ou ether3,ether4,ether5">
+                            <input type="text" id="interfaces_lan" placeholder="ether4 ou ether3,ether4,ether5" title="Interfaces físicas que entram na bridge da LAN (portas de acesso dos clientes). Se detectadas num .rsc importado, são preenchidas automaticamente. Deixe em branco se preferir configurar isso manualmente depois.">
                             <div class="info-box">
                                 💡 Deixe em branco para configurar manualmente após instalação.
                                 Para múltiplas interfaces, separe por vírgula.
@@ -962,7 +1026,7 @@
                 </div>
 
                 <!-- Recomendações do Mikrodomo (opt-in) -->
-                <div class="section" style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-color:#bfdbfe;">
+                <div class="section" style="background: linear-gradient(160deg, rgba(45, 212, 191, 0.10) 0%, rgba(15, 23, 42, 0.55) 100%); border-color: rgba(45, 212, 191, 0.35);">
                     <h3><div class="section-icon">🛡️</div> Recomendações do Mikrodomo</h3>
                     <div class="small-text" style="margin-bottom:10px;">
                         Por padrão, o Mikrodomo <strong>preserva a configuração original</strong> nestes pontos e nunca decide por conta própria.
@@ -970,13 +1034,13 @@
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="opt_renomear_interfaces">
-                        <label for="opt_renomear_interfaces">Renomear as interfaces PPPoE para o padrão do Mikrodomo (<code>pppoe-OPERADORA</code>)</label>
+                        <label for="opt_renomear_interfaces" title="Marque só se quiser padronizar o nome do dialer PPPoE. Deixar desmarcado é mais seguro ao reimportar uma configuração já em produção.">Renomear as interfaces PPPoE para o padrão do Mikrodomo (<code>pppoe-OPERADORA</code>)</label>
                     </div>
                     <div class="small-text" style="margin:2px 0 10px 24px;">Desmarcado (padrão): reaproveita o nome original detectado no arquivo importado (ex: <code>pppoe-out2</code>), evitando criar uma interface duplicada.</div>
 
                     <div class="checkbox-group">
                         <input type="checkbox" id="opt_hardening_acesso">
-                        <label for="opt_hardening_acesso">Aplicar hardening padrão de acesso (desabilita FTP/Telnet/WWW/API, restringe Winbox à rede de gerência)</label>
+                        <label for="opt_hardening_acesso" title="Só marque se quiser que o Mikrodomo defina essas regras de acesso. Se o roteador já está em produção com SSH/Winbox configurados do seu jeito, deixe desmarcado.">Aplicar hardening padrão de acesso (desabilita FTP/Telnet/WWW/API, restringe Winbox à rede de gerência)</label>
                     </div>
                     <div class="small-text" style="margin:2px 0 0 24px;">Desmarcado (padrão): o Mikrodomo não inclui nenhum bloco <code>/ip service</code> na configuração gerada — o que já existia no arquivo original permanece do jeito que está, em "Outras Configurações". Se marcar esta opção e tiver importado um arquivo com configuração de acesso própria, edite/remova as linhas correspondentes em "Outras Configurações" para que este hardening realmente prevaleça (comandos executados depois sobrescrevem os anteriores no RouterOS).</div>
                 </div>
@@ -986,13 +1050,13 @@
                     <h3><div class="section-icon">⚡</div> Controle de Banda (QoS)</h3>
                     <div class="checkbox-group">
                         <input type="checkbox" id="habilitar_qos">
-                        <label for="habilitar_qos">Configurar controle de banda geral</label>
+                        <label for="habilitar_qos" title="Limita a banda total da rede (todos os dispositivos da LAN dividem esse limite de forma justa, via PCQ).">Configurar controle de banda geral</label>
                     </div>
                     
                     <div id="qos_fields" class="conditional-fields hidden">
                         <div class="form-group">
                             <label for="velocidade">Velocidade (Mbps):</label>
-                            <input type="number" id="velocidade" placeholder="100" value="20">
+                            <input type="number" id="velocidade" placeholder="100" value="20" title="Limite total de banda da rede, em megabits por segundo. Use o valor contratado com a operadora (ou um pouco abaixo, para folga).">
                             <div class="small-text">Aplicado tanto para upload quanto download. Burst calculado automaticamente (2x de pico por 8s, liberado acima de 80% de uso sustentado).</div>
                         </div>
                     </div>
@@ -1147,11 +1211,11 @@
                 const keyId = 'custom_' + nome.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Date.now();
                 const keywords = dominios.split(',').map(d => d.trim()).filter(Boolean).join('|');
                 if (!keywords) return;
-                groupSites[targetId].push({ id: keyId, label: nome, regex: buildRegex(keywords) });
+                groupSites[targetId].push({ id: keyId, label: nome, regex: buildRegex(keywords), ativo: true });
             } else {
                 if (groupSites[targetId].some(s => s.id === val)) { sel.value = ''; return; }
                 const cat = SITE_CATALOG.find(s => s.id === val);
-                if (cat) groupSites[targetId].push({ id: cat.id, label: cat.label, regex: cat.regex });
+                if (cat) groupSites[targetId].push({ id: cat.id, label: cat.label, regex: cat.regex, ativo: true });
             }
             sel.value = '';
             renderChips(targetId);
@@ -1162,12 +1226,22 @@
             renderChips(targetId);
         }
 
+        function toggleSiteAtivo(targetId, siteId) {
+            const site = (groupSites[targetId] || []).find(s => s.id === siteId);
+            if (site) site.ativo = site.ativo === false ? true : false;
+            renderChips(targetId);
+        }
+
         function renderChips(targetId) {
             const container = document.getElementById('sites_' + targetId);
             if (!container) return;
-            container.innerHTML = (groupSites[targetId] || []).map(s =>
-                `<span class="chip">${s.label}<button type="button" onclick="removerSite('${targetId}','${s.id}')">✖</button></span>`
-            ).join('');
+            container.innerHTML = (groupSites[targetId] || []).map(s => {
+                const ativo = s.ativo !== false;
+                return `<span class="chip ${ativo ? '' : 'chip-inactive'}">
+                    <span onclick="toggleSiteAtivo('${targetId}','${s.id}')" style="cursor:pointer;" title="${ativo ? 'Ativo - clique para desativar (fica salvo, mas não entra na configuração gerada)' : 'Inativo - detectado desabilitado no arquivo original, ou desativado manualmente. Clique para ativar.'}">${ativo ? '●' : '○'} ${s.label}</span>
+                    <button type="button" onclick="removerSite('${targetId}','${s.id}')" title="Remover da lista">✖</button>
+                </span>`;
+            }).join('');
         }
 
         function renderGrupoBlock(id) {
@@ -1179,18 +1253,18 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="nome_${id}">Nome do Grupo:</label>
-                        <input type="text" id="nome_${id}" placeholder="Ex: Setor Administrativo, Visitantes...">
+                        <input type="text" id="nome_${id}" placeholder="Ex: Setor Administrativo, Visitantes..." title="Vira o nome da address-list no MikroTik. Evite usar um nome que já existe no arquivo importado (o Mikrodomo avisa se detectar colisão).">
                     </div>
                     <div class="form-group">
                         <label for="ips_${id}">IPs do Grupo (opcional):</label>
-                        <textarea id="ips_${id}" rows="2" placeholder="192.168.1.50&#10;192.168.1.51&#10;ou 192.168.1.0/24"></textarea>
+                        <textarea id="ips_${id}" rows="2" placeholder="192.168.1.50&#10;192.168.1.51&#10;ou 192.168.1.0/24" title="IPs ou faixas que pertencem a este grupo. Pode deixar vazio agora e cadastrar depois direto no MikroTik com /ip firewall address-list add."></textarea>
                         <div class="small-text">Um IP/faixa por linha ou separado por vírgula. Pode deixar vazio e preencher depois.</div>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="site_select_${id}">Adicionar site/serviço:</label>
-                        <select id="site_select_${id}"></select>
+                        <select id="site_select_${id}" title="Escolha um site do catálogo, ou 'Personalizado' para bloquear por palavra-chave de domínio."></select>
                     </div>
                     <div class="form-group" style="display:flex; align-items:flex-end;">
                         <button type="button" class="btn btn-secondary" style="margin-top:0;" onclick="adicionarSite('${id}')">➕ Adicionar</button>
@@ -1198,12 +1272,12 @@
                 </div>
                 <div id="sites_${id}" class="chips-container"></div>
                 <div class="form-row">
-                    <div class="checkbox-group"><input type="checkbox" id="quic_${id}"><label for="quic_${id}">Bloquear QUIC (UDP 443)</label></div>
-                    <div class="checkbox-group"><input type="checkbox" id="dot_${id}"><label for="dot_${id}">Bloquear DoT (853)</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="quic_${id}"><label for="quic_${id}" title="QUIC é o protocolo usado por Chrome/YouTube/jogos que pode contornar bloqueios de site tradicionais. Bloquear a porta UDP 443 força o tráfego a cair para HTTPS comum, onde os bloqueios acima funcionam.">Bloquear QUIC (UDP 443)</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="dot_${id}"><label for="dot_${id}" title="DoT (DNS over TLS, porta 853) é uma forma de criptografar consultas DNS que ignora o DNS do roteador. Bloquear a porta impede esse desvio.">Bloquear DoT (853)</label></div>
                 </div>
                 <div class="form-row">
-                    <div class="checkbox-group"><input type="checkbox" id="doh_${id}"><label for="doh_${id}">Bloquear DoH (SNI + IPs conhecidos)</label></div>
-                    <div class="checkbox-group"><input type="checkbox" id="forcedns_${id}"><label for="forcedns_${id}">Forçar DNS do roteador</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="doh_${id}"><label for="doh_${id}" title="DoH (DNS over HTTPS) é outra forma de burlar o DNS do roteador, usando provedores conhecidos (Cloudflare, Google, Quad9...). Bloqueia por nome (SNI) e pelos IPs desses provedores.">Bloquear DoH (SNI + IPs conhecidos)</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="forcedns_${id}"><label for="forcedns_${id}" title="Redireciona à força qualquer consulta DNS deste grupo para o DNS do próprio roteador, mesmo que o dispositivo tente usar outro DNS manualmente configurado.">Forçar DNS do roteador</label></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -1248,7 +1322,7 @@
                     key: slug(nome),
                     label: nome,
                     ips,
-                    sites: groupSites[id] || [],
+                    sites: (groupSites[id] || []).filter(s => s.ativo !== false),
                     quic: document.getElementById('quic_' + id).checked,
                     dot: document.getElementById('dot_' + id).checked,
                     doh: document.getElementById('doh_' + id).checked,
@@ -1265,7 +1339,7 @@
                 key: 'REDETODA',
                 label: 'REDE TODA',
                 isRedeToda: true,
-                sites: groupSites['rede_toda'] || [],
+                sites: (groupSites['rede_toda'] || []).filter(s => s.ativo !== false),
                 quic: document.getElementById('quic_rede_toda').checked,
                 dot: document.getElementById('dot_rede_toda').checked,
                 doh: document.getElementById('doh_rede_toda').checked,
@@ -1496,6 +1570,11 @@ add name=QoS_${t.key}_DOWN parent=global-in packet-mark=qos_${t.key}_down max-li
             const backup2 = backup2Ativado ? getInterfaceValue('backup2') : '';
             const interfacesLan = document.getElementById('interfaces_lan').value.split(',').map(s => s.trim()).filter(s => s);
 
+            if (!principal) {
+                alert('❌ O Link Principal é obrigatório — preencha pelo menos a interface dele. Backup-1 e Backup-2 são opcionais.');
+                return false;
+            }
+
             if (principal) interfaces.push(principal);
             if (backup1) interfaces.push(backup1);
             if (backup2) interfaces.push(backup2);
@@ -1579,13 +1658,14 @@ add name=QoS_${t.key}_DOWN parent=global-in packet-mark=qos_${t.key}_down max-li
             const habilitarQos = document.getElementById('habilitar_qos').checked;
             const velocidade = document.getElementById('velocidade').value;
             
-            const rangeDhcp = calcularRangeDHCP(redeLan);
+            const rangeDhcp = dhcpPoolRangeImportado || calcularRangeDHCP(redeLan);
             const gatewayLan = redeLanGatewayImportado || calcularGateway(redeLan);
             const redeNetwork = redeLan.split('/')[0];
             const prefixoLan = redeLan.split('/')[1] || '24';
             
             const principal = coletarDadosLink('principal');
-            const backup1 = coletarDadosLink('backup1');
+            const backup1Dados = coletarDadosLink('backup1');
+            const backup1 = backup1Dados.interface ? backup1Dados : null;
             const backup2 = backup2Ativado ? coletarDadosLink('backup2') : null;
 
             let config = `/interface bridge
@@ -1596,7 +1676,9 @@ add name=dhcp_pool0 ranges=${rangeDhcp}`;
 
             config += gerarVlans(principal, backup1, backup2);
             config += gerarConfigLink(principal, 'PRINCIPAL', 1);
-            config += gerarConfigLink(backup1, 'BACKUP-1', 2);
+            if (backup1) {
+                config += gerarConfigLink(backup1, 'BACKUP-1', 2);
+            }
             if (backup2) {
                 config += gerarConfigLink(backup2, 'BACKUP-2', 3);
             }
@@ -1608,7 +1690,7 @@ add name=dhcp_pool0 ranges=${rangeDhcp}`;
 add kind=pcq name=${velocidade}mb-download pcq-rate=${velocidade}M pcq-classifier=dst-address pcq-total-limit=20000KiB pcq-burst-rate=${burstGeral.limit}M pcq-burst-threshold=${burstGeral.threshold}M pcq-burst-time=${burstGeral.time}
 add kind=pcq name=${velocidade}mb-upload pcq-rate=${velocidade}M pcq-classifier=src-address pcq-total-limit=20000KiB pcq-burst-rate=${burstGeral.limit}M pcq-burst-threshold=${burstGeral.threshold}M pcq-burst-time=${burstGeral.time}
 /queue simple
-add name=${nomeBridge} queue=${velocidade}mb-upload/${velocidade}mb-download target=${redeLan},${nomeBridge}`;
+add name=${nomeBridge} queue=${velocidade}mb-upload/${velocidade}mb-download target=${redeLan},${nomeBridge} burst-limit=${burstGeral.limit}M/${burstGeral.limit}M burst-threshold=${burstGeral.threshold}M/${burstGeral.threshold}M burst-time=${burstGeral.time}/${burstGeral.time} comment="QoS Geral - ${identificacao}"`;
             }
             
             config += `
@@ -1648,8 +1730,10 @@ add action=drop chain=input comment="Drop Geral"
             config += gerarNAT(principal, backup1, backup2);
             
             config += `
-/ip route` + gerarRotaLink(principal, 'PRINCIPAL', 1) + gerarRotaLink(backup1, 'BACKUP-1', 2);
-
+/ip route` + gerarRotaLink(principal, 'PRINCIPAL', 1);
+            if (backup1) {
+                config += gerarRotaLink(backup1, 'BACKUP-1', 2);
+            }
             if (backup2) {
                 config += gerarRotaLink(backup2, 'BACKUP-2', 3);
             }
@@ -1688,7 +1772,7 @@ set channel=long-term`;
 
             const netwatchEntries = [
                 { link: principal, nome: 'PRINCIPAL' },
-                { link: backup1, nome: 'BACKUP-1' },
+                ...(backup1 ? [{ link: backup1, nome: 'BACKUP-1' }] : []),
                 ...(backup2 ? [{ link: backup2, nome: 'BACKUP-2' }] : [])
             ].filter(e => isValidIPv4(e.link.ipMonitor));
 
@@ -1757,6 +1841,7 @@ add down-script=":log error \\"LINK ${e.nome} DOWN!\\"" host=${e.link.ipMonitor}
 
         let linkNomeOriginal = { principal: '', backup1: '', backup2: '' };
         let redeLanGatewayImportado = '';
+        let dhcpPoolRangeImportado = '';
 
         function isValidIPv4(str) {
             if (!str) return false;
@@ -1809,7 +1894,7 @@ add down-script=":log error \\"LINK ${e.nome} DOWN!\\"" host=${e.link.ipMonitor}
 add interface=${principal.interface} name=${principal.interface}.${principal.vlan} vlan-id=${principal.vlan} comment="VLAN-${principal.operadora.toUpperCase()}-PRINCIPAL"`;
             }
             
-            if (backup1.vlan) {
+            if (backup1 && backup1.vlan) {
                 config += `
 /interface vlan
 add interface=${backup1.interface} name=${backup1.interface}.${backup1.vlan} vlan-id=${backup1.vlan} comment="VLAN-${backup1.operadora.toUpperCase()}-BACKUP1"`;
@@ -1849,11 +1934,12 @@ add allow=chap,mschap1,mschap2 disabled=no interface=${interfaceReal} name=${nom
                 }
                 
             } else if (dados.tipo === 'dhcp') {
+                const ipMonitorDhcp = isValidIPv4(dados.ipMonitor) ? dados.ipMonitor : '8.8.8.8';
                 config += `
 /ip dhcp-client
 add add-default-route=no interface=${interfaceReal} script="{\\r\\
     \\n    :if (\\$bound=1) do={\\r\\
-    \\n  /ip route add dst=${dados.ipMonitor} gateway=\\$\\"gateway-address\\" scope=10 comment=MONITOR-${nome}\\r\\
+    \\n  /ip route add dst=${ipMonitorDhcp} gateway=\\$\\"gateway-address\\" scope=10 comment=MONITOR-${nome}\\r\\
     \\n    } else={\\r\\
     \\n  /ip route remove [find comment=\\"MONITOR-${nome}\\"]\\r\\
     \\n    }\\r\\
@@ -1887,7 +1973,8 @@ add dst-address=${dados.ipMonitor} gateway=${dados.gateway} scope=10 comment=MON
                 // (não há um gateway separado conhecido, ex: link importado com rota direta).
                 return `\nadd check-gateway=ping comment="ROTA ${nome}" distance=${distance} gateway=${dados.ipMonitor}`;
             }
-            return `\nadd check-gateway=ping comment="ROTA ${nome}" distance=${distance} gateway=${dados.ipMonitor} target-scope=11`;
+            const ipMonitorEfetivo = isValidIPv4(dados.ipMonitor) ? dados.ipMonitor : '8.8.8.8';
+            return `\nadd check-gateway=ping comment="ROTA ${nome}" distance=${distance} gateway=${ipMonitorEfetivo} target-scope=11`;
         }
 
         function gerarNAT(principal, backup1, backup2) {
@@ -1902,13 +1989,15 @@ add action=masquerade chain=srcnat out-interface=${nomeInterfacePppoe(principal,
 add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-list=LAN`;
             }
             
-            if (backup1.tipo === 'pppoe') {
-                config += `
+            if (backup1) {
+                if (backup1.tipo === 'pppoe') {
+                    config += `
 add action=masquerade chain=srcnat out-interface=${nomeInterfacePppoe(backup1, backup1._sufixo)} src-address-list=LAN`;
-            } else {
-                const interfaceReal = backup1.vlan ? `${backup1.interface}.${backup1.vlan}` : backup1.interface;
-                config += `
+                } else {
+                    const interfaceReal = backup1.vlan ? `${backup1.interface}.${backup1.vlan}` : backup1.interface;
+                    config += `
 add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-list=LAN`;
+                }
             }
             
             if (backup2) {
@@ -2265,6 +2354,10 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
                     if (params.gateway) { extracted.redeLanGateway = params.gateway; }
                     matched = true;
                 }
+                else if (currentPath === '/ip pool' && cmd === 'add') {
+                    if (params.ranges) { extracted.dhcpPoolRange = params.ranges; }
+                    matched = true;
+                }
                 else if (currentPath === '/ip firewall address-list' && cmd === 'add') {
                     if (params.list === 'LAN' || params.list === 'rede-gerencia' || params.list === 'doh_providers') {
                         matched = true;
@@ -2277,11 +2370,18 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
                     if (params.name && params.name !== 'doh_sni') extracted._layer7[params.name] = params.regexp;
                     matched = true;
                 }
-                else if (currentPath === '/ip firewall mangle' && cmd === 'add' && params['layer7-protocol'] && params.disabled !== 'yes') {
+                else if (currentPath === '/ip firewall mangle' && cmd === 'add' && params['layer7-protocol']) {
                     const site = params['layer7-protocol'];
                     const target = getTarget(params['src-address-list']);
-                    if (site === 'doh_sni') target.doh = true;
-                    else if (!target.sites.includes(site)) target.sites.push(site);
+                    const ativo = params.disabled !== 'yes';
+                    if (site === 'doh_sni') {
+                        if (ativo) target.doh = true;
+                        else target._dohDetectadoInativo = true;
+                    } else {
+                        const existente = target.sites.find(x => x.id === site);
+                        if (existente) { if (ativo) existente.ativo = true; }
+                        else target.sites.push({ id: site, ativo });
+                    }
                     matched = true;
                 }
                 else if (currentPath === '/ip firewall filter' && cmd === 'add' && params.action === 'add-dst-to-address-list' && params['tls-host']) {
@@ -2299,13 +2399,12 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
                         siteLabel = params.comment || rawKeyword;
                         siteRegex = buildRegex(rawKeyword);
                     }
-                    if (!target.sites.includes(siteId)) target.sites.push(siteId);
+                    const ativo = params.disabled !== 'yes';
+                    const existente = target.sites.find(x => x.id === siteId);
+                    if (existente) { if (ativo) existente.ativo = true; }
+                    else target.sites.push({ id: siteId, ativo });
                     if (!extracted._layer7[siteId]) extracted._layer7[siteId] = siteRegex;
                     if (!extracted._customLabels[siteId]) extracted._customLabels[siteId] = siteLabel;
-                    if (params.disabled === 'yes') {
-                        target._importedDisabled = true;
-                        if (!extracted._legacyDisabledSites.includes(siteLabel)) extracted._legacyDisabledSites.push(siteLabel);
-                    }
                     matched = true;
                 }
                 else if (currentPath === '/ip firewall filter' && cmd === 'add' && params.action === 'drop' && params['dst-address-list'] && extracted.legacySiteListNames.has(params['dst-address-list'])) {
@@ -2434,6 +2533,7 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
             if (ex.redeLan) document.getElementById('rede_lan').value = ex.redeLan;
             if (ex.nomeBridge) document.getElementById('nome_bridge').value = ex.nomeBridge;
             redeLanGatewayImportado = ex.redeLanGateway || '';
+            dhcpPoolRangeImportado = ex.dhcpPoolRange || '';
 
             const wanInterfacesUsadas = new Set(['principal', 'backup1', 'backup2'].map(k => ex.wan[k] && ex.wan[k].interface).filter(Boolean));
             const portasLan = Array.from(ex.bridgePortMembers).filter(p => !wanInterfacesUsadas.has(p));
@@ -2467,10 +2567,11 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
                 document.getElementById('dot_' + id).checked = !!g.dot;
                 document.getElementById('doh_' + id).checked = !!g.doh;
                 document.getElementById('forcedns_' + id).checked = !!g.forcedns;
-                (g.sites || []).forEach(siteId => {
+                (g.sites || []).forEach(siteObj => {
+                    const siteId = siteObj.id;
                     const cat = SITE_CATALOG.find(s => s.id === siteId);
-                    if (cat) groupSites[id].push({ id: cat.id, label: cat.label, regex: cat.regex });
-                    else groupSites[id].push({ id: siteId, label: (ex._customLabels && ex._customLabels[siteId]) || siteId, regex: ex._layer7[siteId] || '' });
+                    if (cat) groupSites[id].push({ id: cat.id, label: cat.label, regex: cat.regex, ativo: siteObj.ativo });
+                    else groupSites[id].push({ id: siteId, label: (ex._customLabels && ex._customLabels[siteId]) || siteId, regex: ex._layer7[siteId] || '', ativo: siteObj.ativo });
                 });
                 renderChips(id);
                 gruposImportados++;
@@ -2484,10 +2585,11 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
                 document.getElementById('dot_rede_toda').checked = !!ex.redeToda.dot;
                 document.getElementById('doh_rede_toda').checked = !!ex.redeToda.doh;
                 document.getElementById('forcedns_rede_toda').checked = !!ex.redeToda.forcedns;
-                (ex.redeToda.sites || []).forEach(siteId => {
+                (ex.redeToda.sites || []).forEach(siteObj => {
+                    const siteId = siteObj.id;
                     const cat = SITE_CATALOG.find(s => s.id === siteId);
-                    if (cat) groupSites['rede_toda'].push({ id: cat.id, label: cat.label, regex: cat.regex });
-                    else groupSites['rede_toda'].push({ id: siteId, label: (ex._customLabels && ex._customLabels[siteId]) || siteId, regex: ex._layer7[siteId] || '' });
+                    if (cat) groupSites['rede_toda'].push({ id: cat.id, label: cat.label, regex: cat.regex, ativo: siteObj.ativo });
+                    else groupSites['rede_toda'].push({ id: siteId, label: (ex._customLabels && ex._customLabels[siteId]) || siteId, regex: ex._layer7[siteId] || '', ativo: siteObj.ativo });
                 });
                 renderChips('rede_toda');
             }
@@ -2514,10 +2616,12 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
             status.classList.remove('hidden');
             const linhasOutras = unmatched.filter(u => !u.header).length;
             const viaFallback = ['principal', 'backup1', 'backup2'].filter(k => ex.wan[k] && ex.wan[k]._viaFallback).length;
-            const avisoDesabilitados = (ex._legacyDisabledSites && ex._legacyDisabledSites.length)
-                ? `<br>⚠️ <strong>Atenção:</strong> ${ex._legacyDisabledSites.join(', ')} foram importados a partir de regras antigas (tls-host) que estavam <strong>DESABILITADAS</strong> no arquivo original. Ao gerar a nova configuração, esses bloqueios sairão <strong>ATIVOS</strong> — desmarque/remova o que não for intencional antes de gerar.`
+            let totalInativos = 0;
+            Object.keys(groupSites).forEach(k => { totalInativos += (groupSites[k] || []).filter(s => s.ativo === false).length; });
+            const avisoInativos = totalInativos
+                ? `<br>ℹ️ ${totalInativos} regra(s) de bloqueio foram detectadas <strong>desabilitadas</strong> no arquivo original — aparecem nos chips com "○" (inativo). Clique no chip para ativar, se quiser.`
                 : '';
-            status.innerHTML = `✅ Importação concluída. ${gruposImportados} grupo(s) reconhecido(s)${ex.redeToda ? ' + regra de Rede Toda' : ''}${ex.nomeBridge ? `. Bridge detectada: <code>${ex.nomeBridge}</code>` : ''}${viaFallback ? `. ${viaFallback} link(s) WAN identificado(s) por dedução (rótulo + distância da rota) — confira antes de gerar` : ''}. ${linhasOutras} linha(s) não reconhecida(s) foram para "Outras Configurações" — revise antes de exportar.${avisoDesabilitados}`;
+            status.innerHTML = `✅ Importação concluída. ${gruposImportados} grupo(s) reconhecido(s)${ex.redeToda ? ' + regra de Rede Toda' : ''}${ex.nomeBridge ? `. Bridge detectada: <code>${ex.nomeBridge}</code>` : ''}${viaFallback ? `. ${viaFallback} link(s) WAN identificado(s) por dedução (rótulo + distância da rota) — confira antes de gerar` : ''}. ${linhasOutras} linha(s) não reconhecida(s) foram para "Outras Configurações" — revise antes de exportar.${avisoInativos}`;
         }
 
         // ============================================================
