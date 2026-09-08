@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mikrodomo v1.0.4 - Gerador Failover + Bloqueio MikroTik</title>
+    <title>Mikrodomo v1.0.5 - Gerador Failover + Bloqueio MikroTik</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -678,7 +678,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="version-badge">v1.0.4</div>
+            <div class="version-badge">v1.0.5</div>
             <div class="logo-container">
                 <div class="logo logo-img">
                     <img src="https://alctechsolutions.netlify.app/logo4.png" alt="Mikrodomo"
@@ -704,7 +704,7 @@
         <div class="form-content">
             <!-- 
                 MIKRODOMO - CHANGELOG
-                v1.0.4 (2026-09-02)
+                v1.0.5 (2026-09-02)
                 - QoS: burst-limit/burst-threshold/burst-time calculados automaticamente
                   (2x de pico, 80% threshold, 8s), no QoS geral e por grupo. Corrigido também
                   "pcq-burst-rate" usado incorretamente como limite base no QoS geral (PCQ).
@@ -773,6 +773,10 @@
                         </div>
                         <div class="form-group">
                             <label for="ddns_nome">DDNS MikroTik Cloud (opcional):</label>
+                            <div class="checkbox-group" style="margin-bottom:6px;">
+                                <input type="checkbox" id="ddns_habilitado">
+                                <label for="ddns_habilitado" title="Ativa /ip cloud ddns-enabled=yes. Marcado automaticamente se detectado num .rsc importado, mesmo que o hostname exato não seja conhecido.">DDNS habilitado (MikroTik Cloud)</label>
+                            </div>
                             <input type="text" id="ddns_nome" placeholder="Ex: d4440cc1fac9.sn.mynetname.net" title="Preencha só se você já sabe o hostname do MikroTik Cloud (DDNS). Se detectado num .rsc importado, é preenchido automaticamente. O nome real é atribuído pela MikroTik, não é algo que você inventa.">
                             <div class="small-text" id="ddns_hint">Se detectado no .rsc importado, o nome real (atribuído dinamicamente pela MikroTik Cloud) não fica salvo no arquivo — confirme com <code>/ip cloud print</code> no equipamento.</div>
                         </div>
@@ -1652,6 +1656,7 @@ add name=QoS_${t.key}_DOWN parent=global-in packet-mark=qos_${t.key}_down max-li
         function generateConfig() {
             const identificacao = document.getElementById('identificacao').value;
             const ddnsNome = document.getElementById('ddns_nome').value;
+            const ddnsHabilitado = document.getElementById('ddns_habilitado').checked;
             const redeLan = document.getElementById('rede_lan').value;
             const nomeBridge = document.getElementById('nome_bridge').value.trim() || 'LAN';
             const interfacesLan = document.getElementById('interfaces_lan').value;
@@ -1712,9 +1717,9 @@ set tcp-established-timeout=5m
 /ip settings
 set rp-filter=strict
 /ip address
-add address=${gatewayLan}/${prefixoLan} interface=${nomeBridge} network=${redeNetwork}
+add address=${gatewayLan}/${prefixoLan} interface=${nomeBridge} network=${redeNetwork}${dhcpServerJaConfigurado ? '' : `
 /ip dhcp-server
-add address-pool=dhcp_pool0 interface=${nomeBridge} lease-time=5m name=dhcp1
+add address-pool=dhcp_pool0 interface=${nomeBridge} lease-time=5m name=dhcp1`}
 /ip dhcp-server network
 add address=${redeLan} gateway=${gatewayLan}
 /ip firewall address-list
@@ -1751,17 +1756,18 @@ set api disabled=yes
 set api-ssl disabled=yes`;
             }
 
+            const timezoneFinal = timezoneImportado || 'America/Fortaleza';
             config += `
 /system clock
-set time-zone-autodetect=no time-zone-name=America/Fortaleza
+set time-zone-autodetect=no time-zone-name=${timezoneFinal}
 /system ntp client
 set enabled=yes servers=a.ntp.br,b.ntp.br,c.ntp.br
 /system identity
-set name="${identificacao}"${ddnsNome ? `
+set name="${identificacao}"${ddnsHabilitado ? `
 /ip cloud
-set ddns-enabled=yes
+set ddns-enabled=yes${ddnsNome ? `
 # DDNS conhecido no momento da configuracao: ${ddnsNome}
-# (nome real e atribuido/gerenciado pela MikroTik Cloud - confirme com /ip cloud print)` : ''}
+# (nome real e atribuido/gerenciado pela MikroTik Cloud - confirme com /ip cloud print)` : ''}` : ''}
 /system logging
 add action=disk topics=critical
 add action=disk topics=error
@@ -1842,6 +1848,9 @@ add down-script=":log error \\"LINK ${e.nome} DOWN!\\"" host=${e.link.ipMonitor}
         let linkNomeOriginal = { principal: '', backup1: '', backup2: '' };
         let redeLanGatewayImportado = '';
         let dhcpPoolRangeImportado = '';
+        let dhcpServerJaConfigurado = false;
+        let timezoneImportado = '';
+        let ddnsHabilitadoDetectado = false;
 
         function isValidIPv4(str) {
             if (!str) return false;
@@ -2209,6 +2218,11 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
                     if (params['dns-name']) extracted.ddnsNome = params['dns-name'];
                     matched = true;
                 }
+                else if (currentPath === '/system clock' && cmd === 'set' && params['time-zone-name']) {
+                    extracted.timezone = params['time-zone-name'];
+                    matched = true; // consumido aqui - o Mikrodomo usa esse valor na própria geração,
+                                     // em vez de duplicar (e conflitar) com o timezone padrão
+                }
                 else if (currentPath === '/interface bridge' && cmd === 'add' && params.name) {
                     if (!extracted.nomeBridge) extracted.nomeBridge = params.name;
                     extracted.detectedInterfaces.add(params.name);
@@ -2348,6 +2362,13 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
                         if (c) { c.interface = params.interface; c.vlan = params['vlan-id']; }
                     }
                     matched = true;
+                }
+                else if (currentPath === '/ip dhcp-server' && cmd === 'add') {
+                    extracted.dhcpServerDetectado = true;
+                    // não marca matched=true: o /ip dhcp-server original (com o nome real, lease-time,
+                    // etc.) continua sendo preservado em "Outras Configurações" - e o Mikrodomo deixa
+                    // de gerar o seu próprio bloco, evitando "add name=dhcp1" duplicado (que dá erro
+                    // no RouterOS, pois nomes de dhcp-server precisam ser únicos).
                 }
                 else if (currentPath === '/ip dhcp-server network' && cmd === 'add') {
                     if (params.address) { extracted.redeLan = params.address; }
@@ -2534,16 +2555,20 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
             if (ex.nomeBridge) document.getElementById('nome_bridge').value = ex.nomeBridge;
             redeLanGatewayImportado = ex.redeLanGateway || '';
             dhcpPoolRangeImportado = ex.dhcpPoolRange || '';
+            dhcpServerJaConfigurado = !!ex.dhcpServerDetectado;
+            timezoneImportado = ex.timezone || '';
+            if (ex.ddnsHabilitado) {
+                ddnsHabilitadoDetectado = true;
+                document.getElementById('ddns_habilitado').checked = true;
+                document.getElementById('ddns_nome').value = ex.ddnsNome || document.getElementById('ddns_nome').value;
+                document.getElementById('ddns_hint').textContent = 'DDNS habilitado detectado no .rsc importado (MikroTik Cloud). ' +
+                    (ex.ddnsNome ? 'Nome encontrado: ' + ex.ddnsNome + '.' : 'O nome exato não fica salvo no arquivo, mas a opção "DDNS habilitado" já foi marcada — confirme o hostname com /ip cloud print no equipamento e preencha aqui se quiser incluir no export.');
+            }
 
             const wanInterfacesUsadas = new Set(['principal', 'backup1', 'backup2'].map(k => ex.wan[k] && ex.wan[k].interface).filter(Boolean));
             const portasLan = Array.from(ex.bridgePortMembers).filter(p => !wanInterfacesUsadas.has(p));
             if (portasLan.length) {
                 document.getElementById('interfaces_lan').value = portasLan.join(',');
-            }
-            if (ex.ddnsHabilitado) {
-                document.getElementById('ddns_nome').value = ex.ddnsNome || document.getElementById('ddns_nome').value;
-                document.getElementById('ddns_hint').textContent = 'DDNS habilitado detectado no .rsc importado (MikroTik Cloud). ' +
-                    (ex.ddnsNome ? 'Nome encontrado: ' + ex.ddnsNome + '.' : 'O nome exato não fica salvo no arquivo — confirme com /ip cloud print no equipamento e preencha aqui se quiser incluir no export.');
             }
 
             preencherLink('principal', ex.wan.principal);

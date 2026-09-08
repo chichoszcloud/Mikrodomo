@@ -9,3 +9,4 @@ Thumbs.db
 *.rsc.bak
 *.rsc.local
 /testes-locais/
+wget-log echo *.tar.gz git add .gitignore git commit -m

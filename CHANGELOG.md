@@ -3,6 +3,14 @@
 Todas as mudanças notáveis deste projeto são documentadas aqui.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
+## [1.0.5] - 2026-09-06
+
+### 🐛 Corrigido (encontrados em teste real de produção, importação de `.rsc` real → export → comparação linha a linha)
+
+- **`/ip dhcp-server add ... name=dhcp1` duplicado — causava erro real no RouterOS.** Quando o `.rsc` importado já tinha um `/ip dhcp-server` configurado, o Mikrodomo gerava o seu próprio bloco (com `name=dhcp1`) no corpo principal **e também preservava o original em "Outras Configurações"** — resultando em dois comandos `add name=dhcp1`, e o RouterOS rejeita nomes duplicados dentro de `/ip dhcp-server`. Corrigido: se um `/ip dhcp-server` já configurado for detectado no import, o Mikrodomo não gera mais o seu próprio bloco, e o original (com nome, lease-time e demais parâmetros reais) prevalece via "Outras Configurações".
+- **`/ip cloud set ddns-enabled=yes` era perdido silenciosamente quando não havia hostname associado.** Como o RouterOS não salva o hostname real do DDNS no export, um `.rsc` com DDNS habilitado mas sem `dns-name` fazia o Mikrodomo descartar essa informação por completo — nem gerava, nem preservava. Corrigido: novo checkbox "DDNS habilitado" (marcado automaticamente na importação, independente de haver hostname conhecido) garante que `ddns-enabled=yes` sempre seja incluído no export quando aplicável.
+- **Timezone duplicado e conflitante.** O Mikrodomo sempre gerava `/system clock` com `America/Fortaleza` fixo no corpo principal, mesmo quando o `.rsc` importado tinha um timezone diferente (ex: `America/Sao_Paulo`) preservado em "Outras Configurações" — o valor final ficava correto por sorte de ordem de execução (o último `set` prevalece), mas de forma confusa e redundante. Corrigido: o timezone do `.rsc` importado agora é detectado e usado diretamente na geração, sem duplicidade.
+
 ## [1.0.4] - 2026-09-04
 
 ### 🎨 Identidade visual
