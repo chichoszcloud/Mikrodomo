@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mikrodomo v1.0.5 - Gerador Failover + Bloqueio MikroTik</title>
+    <title>Mikrodomo v1.0.6 - Gerador Failover + Bloqueio MikroTik</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -678,7 +678,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="version-badge">v1.0.5</div>
+            <div class="version-badge">v1.0.6</div>
             <div class="logo-container">
                 <div class="logo logo-img">
                     <img src="https://alctechsolutions.netlify.app/logo4.png" alt="Mikrodomo"
@@ -704,7 +704,7 @@
         <div class="form-content">
             <!-- 
                 MIKRODOMO - CHANGELOG
-                v1.0.5 (2026-09-02)
+                v1.0.6 (2026-09-02)
                 - QoS: burst-limit/burst-threshold/burst-time calculados automaticamente
                   (2x de pico, 80% threshold, 8s), no QoS geral e por grupo. Corrigido também
                   "pcq-burst-rate" usado incorretamente como limite base no QoS geral (PCQ).
@@ -1007,7 +1007,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="rede_lan">Rede LAN:</label>
-                            <input type="text" id="rede_lan" placeholder="192.168.1.0/24" value="192.168.10.0/24" required title="Rede interna (LAN) em notação CIDR. O gateway (.1) e o range de DHCP são calculados a partir disso, a menos que você importe um .rsc com valores diferentes já configurados.">
+                            <input type="text" id="rede_lan" placeholder="192.168.1.0/24" value="192.168.10.0/24" required title="Rede interna (LAN) em notação CIDR. O gateway (.1) e o range de DHCP são calculados a partir disso, a menos que você importe um .rsc com valores diferentes já configurados." oninput="atualizarInfoLan()">
                             <div class="small-text">Gateway e range DHCP calculados automaticamente</div>
                         </div>
                         <div class="form-group">
@@ -1015,6 +1015,10 @@
                             <input type="text" id="nome_bridge" placeholder="LAN" value="LAN" required title="Nome da bridge que agrupa as portas da LAN. Se você importar um .rsc com uma bridge já existente (ex: Br_Rede), o nome é detectado e preenchido aqui automaticamente - evita criar uma bridge duplicada.">
                             <div class="small-text" id="bridge_hint">Se importar um .rsc com uma bridge já existente (ex: Br_Rede), o nome é preenchido aqui automaticamente — evita criar uma bridge duplicada.</div>
                         </div>
+                    </div>
+
+                    <div class="info-box" id="lan_info_box" style="font-size:11px; font-weight:500;">
+                        📡 Calculando...
                     </div>
                     
                     <div class="form-row single">
@@ -1145,6 +1149,11 @@
 
     <script>
         let backup2Ativado = false;
+        let redeLanGatewayImportado = '';
+        let dhcpPoolRangeImportado = '';
+        let dhcpServerJaConfigurado = false;
+        let timezoneImportado = '';
+        let ddnsHabilitadoDetectado = false;
 
         // ============================================================
         // FILTROS DE BLOQUEIO - estado e catálogo de sites
@@ -1304,6 +1313,7 @@
             groupIds.push(id);
             groupSites[id] = [];
             renderGrupoBlock(id);
+            atualizarInfoLan();
             return id;
         }
 
@@ -1536,6 +1546,7 @@ add name=QoS_${t.key}_DOWN parent=global-in packet-mark=qos_${t.key}_down max-li
 
         populateSiteSelect('rede_toda');
         populateInterfaceSelects();
+        atualizarInfoLan();
 
         function toggleConditionalFields(type, value) {
             const pppoeFields = document.getElementById(`pppoe_${type}_fields`);
@@ -1633,6 +1644,30 @@ add name=QoS_${t.key}_DOWN parent=global-in packet-mark=qos_${t.key}_down max-li
             } catch (e) {
                 return '192.168.10.1';
             }
+        }
+
+        // Mantém visível (caixa fixa + tooltip dos campos de IP dos grupos) qual é a rede,
+        // gateway e range de DHCP atuais — em vez de só um placeholder que some ao digitar.
+        function atualizarInfoLan() {
+            const redeLanEl = document.getElementById('rede_lan');
+            const box = document.getElementById('lan_info_box');
+            if (!redeLanEl || !box) return;
+            const redeLan = redeLanEl.value.trim();
+            if (!redeLan || !redeLan.includes('/')) {
+                box.innerHTML = '📡 Preencha a Rede LAN acima para ver o gateway e o range de DHCP calculados.';
+                return;
+            }
+            const gateway = redeLanGatewayImportado || calcularGateway(redeLan);
+            const range = dhcpPoolRangeImportado || calcularRangeDHCP(redeLan);
+            const origemGw = redeLanGatewayImportado ? ' (do arquivo importado)' : ' (calculado)';
+            const origemRange = dhcpPoolRangeImportado ? ' (do arquivo importado)' : ' (calculado)';
+            box.innerHTML = `📡 <strong>Rede:</strong> ${redeLan} &nbsp;|&nbsp; <strong>Gateway:</strong> ${gateway}${origemGw} &nbsp;|&nbsp; <strong>Range DHCP:</strong> ${range}${origemRange}. Use isso como referência ao cadastrar IPs de grupos abaixo — fora do range é normal para IPs fixos (ex: câmeras, APs).`;
+
+            const tituloIps = `Rede atual: ${redeLan} | Gateway: ${gateway} | Range DHCP: ${range}. IPs fixos podem ficar fora desse range (ex: um AP em ${redeLan.split('/')[0].split('.').slice(0, 3).join('.')}.250) — só evite reutilizar um IP já dentro do range de DHCP sem reservá-lo antes.`;
+            groupIds.forEach(id => {
+                const el = document.getElementById('ips_' + id);
+                if (el) el.title = tituloIps;
+            });
         }
 
         document.getElementById('configForm').addEventListener('submit', function(e) {
@@ -1846,11 +1881,6 @@ add down-script=":log error \\"LINK ${e.nome} DOWN!\\"" host=${e.link.ipMonitor}
         }
 
         let linkNomeOriginal = { principal: '', backup1: '', backup2: '' };
-        let redeLanGatewayImportado = '';
-        let dhcpPoolRangeImportado = '';
-        let dhcpServerJaConfigurado = false;
-        let timezoneImportado = '';
-        let ddnsHabilitadoDetectado = false;
 
         function isValidIPv4(str) {
             if (!str) return false;
@@ -1940,6 +1970,16 @@ add allow=chap,mschap1,mschap2 disabled=no interface=${interfaceReal} name=${nom
                     config += `
 /interface pppoe-client
 add allow=chap,mschap1,mschap2 disabled=no interface=${interfaceReal} name=${nomeDialer} password=${dados.senha} user=${dados.usuario} comment="${comentarioCompleto}"`;
+                }
+
+                const renomeandoInterfaces = document.getElementById('opt_renomear_interfaces').checked;
+                const nomeOriginalDetectado = dados._sufixo ? linkNomeOriginal[dados._sufixo] : '';
+                if (renomeandoInterfaces && nomeOriginalDetectado && nomeOriginalDetectado !== nomeDialer) {
+                    // Evita sessão PPPoE duplicada: desabilita a interface antiga (detectada no import)
+                    // em vez de deixá-la ativa junto com a nova, discando as mesmas credenciais.
+                    config += `
+/interface pppoe-client
+set [find name=${nomeOriginalDetectado}] disabled=yes comment="DESABILITADA PELO MIKRODOMO - renomeada para ${nomeDialer}. Revise Outras Configuracoes e regras externas que ainda mencionem '${nomeOriginalDetectado}'."`;
                 }
                 
             } else if (dados.tipo === 'dhcp') {
@@ -2647,6 +2687,7 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
                 ? `<br>ℹ️ ${totalInativos} regra(s) de bloqueio foram detectadas <strong>desabilitadas</strong> no arquivo original — aparecem nos chips com "○" (inativo). Clique no chip para ativar, se quiser.`
                 : '';
             status.innerHTML = `✅ Importação concluída. ${gruposImportados} grupo(s) reconhecido(s)${ex.redeToda ? ' + regra de Rede Toda' : ''}${ex.nomeBridge ? `. Bridge detectada: <code>${ex.nomeBridge}</code>` : ''}${viaFallback ? `. ${viaFallback} link(s) WAN identificado(s) por dedução (rótulo + distância da rota) — confira antes de gerar` : ''}. ${linhasOutras} linha(s) não reconhecida(s) foram para "Outras Configurações" — revise antes de exportar.${avisoInativos}`;
+            atualizarInfoLan();
         }
 
         // ============================================================
@@ -2687,6 +2728,21 @@ add action=masquerade chain=srcnat out-interface=${interfaceReal} src-address-li
             const nomeBridge = document.getElementById('nome_bridge').value.trim();
             if (nomeBridge && existingListNames.includes(nomeBridge)) {
                 avisos.push(`O nome da bridge ("${nomeBridge}") coincide com uma address-list já existente no arquivo — confira se não é coincidência problemática.`);
+            }
+
+            const renomeandoInterfaces = document.getElementById('opt_renomear_interfaces').checked;
+            if (renomeandoInterfaces) {
+                ['principal', 'backup1', 'backup2'].forEach(sufixo => {
+                    const tipoEl = document.getElementById('tipo_' + sufixo);
+                    if (!tipoEl || tipoEl.value !== 'pppoe') return;
+                    const nomeOriginal = linkNomeOriginal[sufixo];
+                    if (!nomeOriginal) return;
+                    const dadosLink = coletarDadosLink(sufixo);
+                    const nomeNovo = nomeInterfacePppoe(dadosLink, sufixo);
+                    if (nomeOriginal !== nomeNovo) {
+                        avisos.push(`A interface PPPoE original "${nomeOriginal}" (${sufixo}) será desabilitada automaticamente após criar a nova "${nomeNovo}", para evitar sessão duplicada. Isso NÃO atualiza referências ao nome antigo em "Outras Configurações" ou em regras externas — revise manualmente se algo ainda mencionar "${nomeOriginal}".`);
+                    }
+                });
             }
 
             return avisos;

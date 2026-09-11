@@ -3,6 +3,14 @@
 Todas as mudanças notáveis deste projeto são documentadas aqui.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
+## [1.0.6] - 2026-09-11
+
+### ✨ Adicionado
+
+- **Renomear PPPoE agora desabilita a interface antiga automaticamente.** Antes, marcar "Renomear interfaces PPPoE" criava a nova interface (ex: `pppoe-VIVO`) mas deixava a original detectada no import (ex: `pppoe-out2`) ativa — resultando em duas sessões PPPoE disputando a mesma credencial. Agora o Mikrodomo desabilita a interface antiga automaticamente logo após criar a nova (`set [find name=pppoe-out2] disabled=yes`), e a verificação prévia avisa claramente: a interface antiga será desabilitada, mas referências ao nome antigo em "Outras Configurações" ou regras externas não são reescritas automaticamente — revise manualmente se necessário.
+- **Caixa de informações da Rede LAN, sempre visível e atualizada em tempo real**, mostrando rede, gateway e range de DHCP (calculado ou detectado no import) — para servir de referência na hora de cadastrar IPs em grupos de bloqueio (ex: saber se o IP de um AP/câmera está dentro ou fora do range do DHCP). Antes essa informação só existia como texto de exemplo no placeholder, que desaparecia assim que o usuário começava a digitar.
+- O tooltip do campo de IPs de cada grupo agora também mostra essa mesma informação (rede/gateway/range), atualizada dinamicamente conforme a Rede LAN muda.
+
 ## [1.0.5] - 2026-09-06
 
 ### 🐛 Corrigido (encontrados em teste real de produção, importação de `.rsc` real → export → comparação linha a linha)

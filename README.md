@@ -16,7 +16,8 @@ Mikrodomo é um gerador de configuração MikroTik (`.rsc`) que roda 100% no nav
 
 ## ✨ Funcionalidades
 
-- **Failover multi-WAN** (até 3 links) com `check-gateway=ping`, suporte a PPPoE / DHCP / IP estático e VLAN. Só o **Link Principal é obrigatório** — Backup-1 e Backup-2 são opcionais.
+- **Failover multi-WAN** (até 3 links) com `check-gateway=ping`, suporte a PPPoE / DHCP / IP estático e VLAN. Só o **Link Principal é obrigatório** — Backup-1 e Backup-2 são opcionais. Ao optar por renomear interfaces PPPoE, a interface antiga (detectada no import) é **desabilitada automaticamente**, evitando sessão duplicada — com aviso prévio sobre o que precisa de revisão manual.
+- **Caixa de informações da Rede LAN** sempre visível (rede, gateway, range de DHCP calculado ou detectado no import), útil na hora de decidir qual IP usar num grupo de bloqueio.
 - **Filtros de bloqueio** por grupo nomeado (com lista de IPs própria) ou para a rede inteira: Meta, Spotify, YouTube, Netflix, TikTok, Twitter/X, Discord, Twitch, Steam, ou sites personalizados. Regras detectadas **desabilitadas** num `.rsc` importado aparecem como chip inativo (○), sem entrar na configuração gerada até você reativar com um clique.
 - **Anti-bypass de DNS**: bloqueio de DoH (SNI + IPs de provedores conhecidos), DoT, QUIC, e opção de forçar todo mundo a usar o DNS do próprio roteador.
 - **QoS por grupo e geral** (upload/download via mangle + queue tree / PCQ), com **burst calculado automaticamente** (2x de pico, liberado até 80% de uso sustentado, janela de 8s) em ambos, incluindo a linha do `/queue simple`.
